@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
-  "name": "E46 Test 2",
+  "name": "E46 Test 2 (render match)",
   "packWaste": 3,
   "theme": "e46test2",
-  "_about": "Test layout cloned from the E36 cluster theme (aidac/apps). Tuned as a starting point to match a specific high-resolution US MPH E36 M cluster photo: dual MPH/km/h scale, orange needles, M badge, oil temperature gauge under tach, classic bottom LCD. For testing outside the main apps repo.",
+  "_about": "Test layout aiming to be essentially indistinguishable from a provided high-quality render of a US-spec E36 M cluster (dual MPH/km/h, orange needles, M badge, oil temp gauge, classic orange LCD). Cloned from the photo-traced E36 theme and open for fine-tuning against the render.",
   "widgets": [
     {
       "id": "dash_eu",
