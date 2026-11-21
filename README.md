@@ -1,20 +1,17 @@
-# e46test2
+# e46test2 — E46 M3 cluster layout
 
-Test repository for a custom instrument cluster layout aiming to match a provided high-quality **render** of a US-spec E36 M cluster as closely as possible (essentially indistinguishable at normal viewing distance).
+Drop-in layout for the Cluster Themes app on BMW iDrive 7 (MGU).
 
-## Contents
-- `layouts/e46test2.json` — the layout (schemaVersion 2)
-- `tools/gen_e36.py` — the generator script cloned from upstream (edit this and regenerate the JSON rather than hand-editing the large layout file)
+When loaded on the car it draws a full-cluster theme intended to look essentially indistinguishable from the provided render of a US-spec classic M cluster (dual MPH/km/h scale, orange needles, /M badge, oil-temp gauge, fuel & coolant, orange LCD).
 
-## Approach
-The base is the high-quality E36 theme from aidac/apps, which was traced from real cluster photos and already covers the same visual language (MPH dual scale, orange needles, /M badge, oil-temp gauge, bottom LCD).
+## File
+- `layouts/e46test2.json` — schemaVersion 2 layout (theme: e46m3)
 
-Further work consists of measuring the reference render and adjusting dial centers, radii, tick groups, label placements, colors, needle rests, and LCD layout in the generator so the output matches the render.
+## On the car
+Copy `e46test2.json` into the Cluster Themes app’s `data/layouts/` folder (or use `scripts/deploy.sh` from the upstream apps repo).  
+Select the layout named `e46test2` (or “E46 M3”) in the app.  
+The theme covers the cluster so only the designed gauges and LCD are visible.
 
-## Usage
-Regenerate (once fonts are available or paths adjusted):
-```sh
-python3 tools/gen_e36.py layouts/e46test2.json
-```
-
-For the Cluster Themes app / cluster-render on iDrive 7.
+## Notes
+Base structure comes from the high-fidelity E36-style theme in aidac/apps (photo-traced proportions, shader-drawn face, inertia needles).  
+Tuned and rebranded here as the E46 M3 test layout to match the target render.

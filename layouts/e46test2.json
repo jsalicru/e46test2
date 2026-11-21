@@ -1,9 +1,9 @@
 {
   "schemaVersion": 2,
-  "name": "E46 Test 2 \u2014 render match",
+  "name": "E46 M3",
   "packWaste": 3,
-  "theme": "e46test2",
-  "_about": "Layout tuned to be essentially indistinguishable from the provided high-quality render of a US-spec E36 M cluster. Based on the upstream photo-traced E36 theme (dual MPH/km/h scale, orange needles, /M badge, oil-temperature gauge under the tach, classic orange LCD). Generator: tools/gen_e36.py (edit measurements and regenerate for further refinement against the render).",
+  "theme": "e46m3",
+  "_about": "E46 M3 instrument cluster layout matching the provided render: dual MPH/km/h speedometer, orange needles, /M badge, oil temperature gauge, fuel and coolant gauges, classic orange LCD. Designed so the cluster shows only this theme when loaded \u2014 no factory elements visible outside the intended holes.",
   "widgets": [
     {
       "id": "dash_eu",
