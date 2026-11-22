@@ -355,6 +355,7 @@ const MVIEW_RPM = 8000;            // the M view theme's rev scale: 0..8
 const MVIEW_SPEED = { us: 200, metric: 330 };
 // the E36 shader's colour roles, in u_col order (hud_themes.js e36)
 const E36_ROLES = ['bezel', 'face', 'dial', 'mark', 'needle', 'hub', 'red', 'blue', 'orange', 'well', 'strip', 'bg'];
+const SHIFT_BLINK_MS = 200;       // the E46 lamps' blink past their shift point: 200 ms on, 200 ms off (the loop runs at 10 fps)
 const E36_ZONE_COLORS = ['red', 'blue', 'orange', 'yellow', 'unlit', 'mark'];      // u_zoneB's colour codes
 const VDASH_RPM = 8000;            // the Vector theme's rev counter: 0..8
 const MEDIA_IF = 'de.bmw.infotainment.hmi.hmimediastate.HmiMediaState';   // the head unit's now playing (front)
@@ -2225,7 +2226,7 @@ class HudApp {
             const R = this._e36Revs(w);
             const T = pad((w.ticks || []).concat(R.ticks), 10, null);    // [dial, first angle, last angle, count, outer r, length, width]
             c.uniform(ref, 'u_tick', flat(T.map((g) => (g ? [g[1], g[2], g[3], g[4]] : [0, 0, 0, 0]))), { type: 'vec4' });
-            c.uniform(ref, 'u_tickB', flat(T.map((g) => (g ? [g[5], g[6], g[0], g[7] ? 1 : 0] : [0, 0, -1, 0]))), { type: 'vec4' });
+            c.uniform(ref, 'u_tickB', flat(T.map((g) => (g ? [g[5], g[6], g[0], g[7] || 0] : [0, 0, -1, 0]))), { type: 'vec4' });
             const Z = pad((w.zones || []).concat(R.zones), 6, null);    // [dial, from angle, to angle, inner r, outer r, colour, stripes]
             c.uniform(ref, 'u_zone', flat(Z.map((z) => (z ? [z[1], z[2], z[3], z[4]] : [0, 0, 0, 0]))), { type: 'vec4' });
             c.uniform(ref, 'u_zoneB', flat(Z.map((z) => (z ? [z[0], E36_ZONE_COLORS.indexOf(z[5]) + 8 * (z[6] || 0)] : [-1, -1]))), { type: 'vec2' });
@@ -2801,15 +2802,21 @@ class HudApp {
             x.c.uniform(x.ref, 'u_value', [q]);
             x.c.uniform(x.ref, 'u_flash', [this.flash ? 1 : 0]);
         } else if (w.type === 'e36dash' && w.warm) {
-            // the E46 M3's warm-up lamps ("warm": [from F, to F, lamps]): all lit while the oil is colder than "from",
-            // then going out one by one from the lowest as it warms, all out at "to"; lit without oil data
-            const oil = this._raw('oil');
-            const [lo, hi, n] = w.warm;
+            // the E46 M3's lamps ("warm": [from F, to F, yellow lamps]; "shift": [rpm, rpm, rpm]). Warm-up: all the yellow
+            // ones lit while the oil is colder than "from", going out one by one from the lowest as it warms, all out at
+            // "to" (lit without oil data). Shift: from shift[0] rpm they light again from the top down, one more each
+            // (shift[1] - shift[0]) / lamps, the lowest last; past shift[2] every lamp blinks. A lamp is lit if either
+            // lights it. The shader takes how many yellow lamps are out from the lowest, or -1 for all out.
+            const oil = this._raw('oil'), rpm = this._rpmIn(now);
+            const [lo, hi, n] = w.warm, sh = w.shift;
             const f = isNum(oil) ? oil * 9 / 5 + 32 : null;
-            const off = f === null ? 0 : Math.max(0, Math.min(n, Math.floor((f - lo) / (hi - lo) * n)));
-            if (!force && off === x.last) return;
-            x.last = off;
-            x.c.uniform(x.ref, 'u_e46', [w.chrome || 0, w.pill ? 1 : 0, off]);
+            const warmOut = f === null ? 0 : Math.max(0, Math.min(n, Math.floor((f - lo) / (hi - lo) * n)));
+            const fill = sh && isNum(rpm) && rpm >= sh[0] ? Math.min(n, Math.floor((rpm - sh[0]) / ((sh[1] - sh[0]) / n)) + 1) : 0;
+            let out = Math.min(warmOut, n - fill);
+            if (sh && isNum(rpm) && rpm >= sh[2] && Math.floor(now / SHIFT_BLINK_MS) % 2) out = -1;
+            if (!force && out === x.last) return;
+            x.last = out;
+            x.c.uniform(x.ref, 'u_e46', [w.chrome || 0, w.pill ? 1 : 0, out]);
         } else if (w.type === 'shiftbar' || w.type === 'revarc') {
             const rpm = this._raw('rpm');
             const segs = w.segments || (w.type === 'revarc' ? 30 : 40);
