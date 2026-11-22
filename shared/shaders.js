@@ -1851,7 +1851,12 @@ void main() {
             // a polished ring just outside the rim: bright along its middle, lit from above
             float t = clamp((edge - 3.0) / u_e46.x, 0.0, 1.0);
             float sheen = 1.0 - abs(2.0 * t - 1.0);
-            c = put(c, vec3(0.93, 0.93, 0.95) * (0.38 + 0.62 * sqrt(sheen)) * (0.78 + 0.22 * low), cov(abs(edge - 3.0 - u_e46.x * 0.5) - u_e46.x * 0.5));
+            // by day polished steel; after sunset (u_light 0) a thin ring lit in the theme's "orange", glowing round it
+            float rd = abs(edge - 3.0 - u_e46.x * 0.5) - u_e46.x * 0.5;
+            vec3 steel = vec3(0.93, 0.93, 0.95) * (0.38 + 0.62 * sqrt(sheen)) * (0.78 + 0.22 * low);
+            vec3 lit = u_col[8] * (0.12 + 0.95 * sheen * sheen * sheen);      // a thin bright line along the middle
+            c = put(c, mix(lit, steel, u_light), cov(rd));
+            c += u_col[8] * (0.16 * (1.0 - u_light) * exp(-max(rd, 0.0) / 4.0));
         }
         float inDial = cov(edge);
         c = put(c, u_col[2] + 0.03 * (1.0 - smoothstep(0.0, G.z, length(p - G.xy - vec2(0.0, G.z * 0.3)))), inDial);

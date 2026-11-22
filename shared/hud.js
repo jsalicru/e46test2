@@ -1389,7 +1389,9 @@ class HudApp {
 
     /** Night colours now: Cluster Themes' "nightDim" on Auto, a theme of the layout's own, and the sun down. */
     _nightDim() {
-        if (!this.ctx.settings.item('nightDim') || this.setting('nightDim') !== 'auto' || !this.layoutTheme) return false;
+        if (!this.ctx.settings.item('nightDim') || !this.layoutTheme) return false;
+        if (this.setting('nightDim') === 'on') return true;        // "Always"
+        if (this.setting('nightDim') !== 'auto') return false;
         return sun.isNight(Date.now(), ...this._sunPlace());
     }
 
