@@ -19,16 +19,43 @@ import bake_fonts as bf  # noqa: E402
 
 OUT = os.path.join(HERE, '..', 'apps', 'cluster_themes', 'hud', 'fonts')
 SEMI = 'BarlowSemiCondensed-Medium.ttf'
+SEMIBOLD = 'BarlowSemiCondensed-SemiBold.ttf'
 D, U, L = bf.DIGITS, bf.UPPER, bf.LOWER
 
 FONTS = [
-    ('e4_big', SEMI, 54, D),                          # the MPH figures and the rev counter's 0 .. 9
-    ('e4_km', SEMI, 27, D),                           # the inner km/h ring
+    ('e4_big', SEMI, 52, D),                          # the MPH figures and the rev counter's 0 .. 9
+    ('e4_km', SEMI, 28, D),                           # the inner km/h ring
     ('e4_lab', SEMI, 34, U + L + D + ' /°'),          # 1/min, x1000, MPH
     ('e4_sm', SEMI, 27, U + L + D + ' /°'),           # km/h, miles, °F
-    ('e4_gl', SEMI, 40, D + '/°F'),                   # the small gauges' and the oil gauge's figures
+    ('e4_gl', SEMIBOLD, 41, D + '/'),                     # the fuel gauge's figures
+    ('e4_oil', SEMI, 32, D + '°F'),                       # the oil gauge's figures and its °F
     ('e4_lcd', 'DSEG7Classic-Bold.ttf', 40, D + '-.: '),
 ]
+
+
+# printed figures (never changing) get proportional digits, as printed dials have: bake() makes them tabular, for
+# readouts, which puts a wide gap round every 1 ("1 / 1", a wide "100"). The LCD keeps its tabular digits.
+PROPORTIONAL = ('e4_big', 'e4_km', 'e4_gl', 'e4_oil')
+GAP = {'e4_big': 3, 'e4_km': 2, 'e4_gl': 2, 'e4_oil': 2}
+
+
+def proportional(name):
+    """Each digit's and '/'s advance its own ink width plus a small gap, its ink starting at the pen."""
+    path = os.path.join(OUT, name + '.json')
+    with open(path) as f:
+        fnt = json.load(f)
+    aw = fnt['width']
+    alpha = base64.b64decode(fnt['alpha'])
+    for ch, g in fnt['glyphs'].items():
+        if ch not in D + '/':
+            continue
+        cols = [x for x in range(g['w']) if any(alpha[(g['y'] + y) * aw + g['x'] + x] > 40 for y in range(g['h']))]
+        if not cols:
+            continue
+        g['ox'] = -cols[0]
+        g['advance'] = cols[-1] - cols[0] + 1 + GAP[name]
+    with open(path, 'w') as f:
+        json.dump(fnt, f, separators=(',', ':'))
 
 
 def add_plus(name):
@@ -69,3 +96,5 @@ if __name__ == '__main__':
     for spec in FONTS:
         bf.bake(OUT, *spec)
     add_plus('e4_lcd')
+    for n in PROPORTIONAL:
+        proportional(n)

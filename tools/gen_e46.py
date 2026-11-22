@@ -92,21 +92,25 @@ ZONES = [
     [3, 30, 41, 168, 200, 'red'],
 ]
 
-# the figures: (text, font, angle, radius of their ink's centre)
-FIG_R = {'mph': 212, 'km': 128, 'rpm': 212}
-FIGURES_SPD = ([(str(v), 'e4_big', mph_ang(v), FIG_R['mph'] if v else 218) for v in range(0, 181, 20)]
-               + [(str(v), 'e4_km', kmh_ang(v), FIG_R['km']) for v in range(20, 301, 20)])
-FIGURES_TACH = [(str(k), 'e4_big', rpm_ang(k), FIG_R['rpm'] + (8 if k in (0, 9) else 0)) for k in range(10)]
+# the figures: (text, font, angle, the ring they sit just inside: its radius, render px). Each figure is moved in from
+# the ring until its ink box clears it by FIG_GAP, so every one sits as close to its ticks as the render's do: the MPH
+# and rpm figures inside the long ticks' inner ends, the km/h ones inside their own short ticks.
+FIG_GAP = 7
+RING = {'mph': 279 - 34, 'km': 152, 'rpm': 279 - 34}
+FIGURES_SPD = ([(str(v), 'e4_big', mph_ang(v), RING['mph']) for v in range(0, 181, 20)]
+               # the render leaves out 180 on the inner ring (its tick stays): it gives the top figures room
+               + [(str(v), 'e4_km', kmh_ang(v), RING['km']) for v in range(20, 301, 20) if v != 180])
+FIGURES_TACH = [(str(k), 'e4_big', rpm_ang(k), RING['rpm']) for k in range(10)]
 
 # print placed by its ink's centre: (text, font, x, y) render px
 TEXTS = [
     ('km/h', 'e4_sm', 665, 452), ('MPH', 'e4_lab', 662, 556),
     ('1/min', 'e4_lab', 1315, 218), ('x1000', 'e4_lab', 1315, 251),
     ('0', 'e4_gl', 78, 429), ('1/2', 'e4_gl', 192, 364), ('1/1', 'e4_gl', 290, 429),
-    ('120', 'e4_gl', 1205, 511), ('210', 'e4_gl', 1320, 485), ('300', 'e4_gl', 1432, 513), ('°F', 'e4_gl', 1385, 565),
+    ('120', 'e4_oil', 1205, 511), ('210', 'e4_oil', 1320, 485), ('300', 'e4_oil', 1432, 513), ('°F', 'e4_oil', 1385, 565),
 ]
 # icons: (name, centre x, y, box size) render px; the /M badge its own size
-ICONS = [('fuel', 197, 452, 62), ('e36cool', 1797, 452, 68), ('e46oil', 1320, 527, 72)]
+ICONS = [('fuel', 197, 452, 50), ('e36cool', 1797, 452, 54), ('e46oil', 1320, 530, 58)]
 LOGO = ('e36m', 660, 503, 96, 34)
 
 # the oil gauge at the rev counter's foot: upright, 120 .. 300 F, its pivot on the flat
@@ -140,6 +144,21 @@ def text_at(wid, text, fname, cx, cy, color='mark', align='center'):
     x, y = cx - dx, cy - dy
     return {'id': wid, 'type': 'text', 'class': 'content', 'z': 5, 'x': round(x - w / 2), 'y': round(y - h / 2),
             'w': w, 'h': h, 'text': text, 'font': fname, 'color': color, 'align': align}
+
+
+def figure_xy(text, fname, centre, ang, ring):
+    """Target px of a figure's ink centre: the furthest out along its angle where its ink box keeps FIG_GAP from the ring."""
+    hw, hh, dx, dy = ink(text, fname)
+    cx, cy = T(*centre)
+    ux, uy = math.sin(math.radians(ang)), -math.cos(math.radians(ang))
+    r = L(ring)
+    while r > 0:
+        bx, by = cx + ux * r, cy + uy * r
+        far = max(math.hypot(bx + sx * hw - cx, by + sy * hh - cy) for sx in (-1, 1) for sy in (-1, 1))
+        if far <= L(ring) - L(FIG_GAP):
+            return bx, by
+        r -= 0.25
+    raise SystemExit('no room for the figure ' + text)
 
 
 def layout():
@@ -207,14 +226,10 @@ def layout():
 
     # the print
     texts = []
-    for i, (t, fn, ang, rad) in enumerate(FIGURES_SPD):
-        a = math.radians(ang)
-        x, y = T(SPD['c'][0] + rad * math.sin(a), SPD['c'][1] - rad * math.cos(a))
-        texts.append(text_at('fs_%d' % i, t, fn, x, y))
-    for i, (t, fn, ang, rad) in enumerate(FIGURES_TACH):
-        a = math.radians(ang)
-        x, y = T(TACH['c'][0] + rad * math.sin(a), TACH['c'][1] - rad * math.cos(a))
-        texts.append(text_at('ft_%d' % i, t, fn, x, y))
+    for i, (t, fn, ang, ring) in enumerate(FIGURES_SPD):
+        texts.append(text_at('fs_%d' % i, t, fn, *figure_xy(t, fn, SPD['c'], ang, ring)))
+    for i, (t, fn, ang, ring) in enumerate(FIGURES_TACH):
+        texts.append(text_at('ft_%d' % i, t, fn, *figure_xy(t, fn, TACH['c'], ang, ring)))
     for i, (t, fn, x, y) in enumerate(TEXTS):
         texts.append(text_at('tx_%d' % i, t, fn, *T(x, y)))
     icons = []
