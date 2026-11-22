@@ -55,12 +55,10 @@ TACH = {'c': (1313.3, 350.0), 'r': 290, 'cut': 607, 'pivot': (1314.8, 360.4)}
 F2C = lambda f: round((f - 32) * 5 / 9, 2)
 COOL_MAP = [(F2C(32), -40), (F2C(100), -40), (F2C(160), -17), (F2C(215), 0), (F2C(235), 17), (F2C(240), 35.5), (F2C(260), 45)]
 
-# each needle's response (1/s, hud.js e36.Needle: it settles in about 4 / resp seconds): the revs quick, the speed a
-# little softer, fuel and coolant slow like the real gauges; all glide between the car's samples
-RESP = {'rpm': 16, 'speed': 10, 'fuel': 2.5, 'coolant': 3}
-# how far ahead each needle path the app sends runs (s; the E36's 0.07): long enough to ride out a late update on the
-# head unit, which replans it every 50 ms when on time
-PATH_AHEAD = 0.25
+# each needle's response (1/s, hud.js e36.Needle: it trails a steady sweep by 2 / resp seconds): the revs and speed
+# quick, fuel and coolant slow like the real gauges
+# (rpm and speed as quick as the E36's 28: softer ones lagged noticeably on the car, Nov 22 2026)
+RESP = {'rpm': 28, 'speed': 22, 'fuel': 2.5, 'coolant': 3}
 
 # the warm-up lamps: all lit below WARM[0] F oil, one by one out as it climbs, all out at WARM[1]; WARM[2] lamps
 WARM = (100, 160, 6)
@@ -248,7 +246,7 @@ def layout():
     nx1 = min(W, math.ceil(max(p[0] + k for p, k in reach)))
     ny0 = max(0, math.floor(min(p[1] - k for p, k in reach)))
     ndl = {'id': 'needles', 'type': 'e36needles', 'class': 'content', 'z': 6, 'x': nx0, 'y': ny0, 'w': nx1 - nx0,
-           'h': TOP - ny0, 'mph': True, 'dials': needles, 'look46': True, 'pathAhead': PATH_AHEAD,
+           'h': TOP - ny0, 'mph': True, 'dials': needles, 'look46': True,
            'econ': {'signal': 'oil', 'pivot': [px, py], 'top': top, 'len': L(OIL_LEN), 'width': L(10), 'cham': cham,
                     'tach': [cx, cy, r, cut], 'map': emap, 'rest': emap[0][1], 'hub': L(OIL_HUB)}}
 
