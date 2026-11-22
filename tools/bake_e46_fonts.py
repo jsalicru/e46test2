@@ -26,7 +26,8 @@ SEMIBOLD = 'BarlowSemiCondensed-SemiBold.ttf'
 D, U, L = bf.DIGITS, bf.UPPER, bf.LOWER
 S = 0.943          # render px -> cluster px (tools/gen_e46.py S)
 
-# name, file, characters, sample, its ink height and width in the render (render px)
+# name, file, characters, sample, its ink height and width in the render (render px); the fuel and oil gauges'
+# print 30 % under the render's (Nov 22 2026)
 FIT = [
     ('e4_big', SEMI, D, '100', 35, 62),                  # the MPH figures (a touch under the render's 38 x 67: on the car they read large)
     ('e4_rpm', SEMI, D, '4', 40, 26),                    # the rev counter's 0 .. 9
@@ -34,11 +35,11 @@ FIT = [
     ('e4_mph', SEMI, 'MPH', 'MPH', 17, 44),              # MPH under the badge: spaced out, well under the render's 25 x 64
     ('e4_lab', SEMI, U + L + D + ' /', 'x1000', 25, 78), # 1/min, x1000: set tight
     ('e4_sm', SEMI, U + L + D + ' /°', 'km/h', 21, 52),  # km/h, miles, the LCD's units (°F / °C)
-    ('e4_gl', SEMIBOLD, D + '/', '0', 28, 17),           # the fuel gauge's 0, 1/2, 1/1 (width from 1/1 below)
-    ('e4_oil', SEMI, D, '210', 29, 51),                  # the oil gauge's 120 210 300
-    ('e4_degf', SEMI, '°F', '°F', 25, 25),               # its °F
+    ('e4_gl', SEMIBOLD, D + '/', '0', 19.6, 11.9),           # the fuel gauge's 0, 1/2, 1/1 (width from 1/1 below)
+    ('e4_oil', SEMI, D, '210', 20.3, 35.7),                  # the oil gauge's 120 210 300
+    ('e4_degf', SEMI, '°F', '°F', 17.5, 17.5),               # its °F
 ]
-WIDTH_ALSO = {'e4_gl': ('1/1', 37)}                    # fit the gap on this sample instead
+WIDTH_ALSO = {'e4_gl': ('1/1', 25.9)}                    # fit the gap on this sample instead
 FIXED = [('e4_lcd', 'DSEG7Classic-Bold.ttf', 40, D + '-.: ')]
 
 
