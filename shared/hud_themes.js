@@ -260,6 +260,15 @@ const THEMES = {
         greeting: 'FOURTH OF JULY',
     },
 };
+// E46 M3 (layout e46test2.json, the e36dash widgets): the E36 face with the E46 M3's orange needles and orange LCD.
+// The layout names theme "e46m3"; without this entry hud.js fell back to Classic, which has none of the dial roles.
+THEMES.e46m3 = Object.assign({}, THEMES.e36, {
+    name: 'E46 M3',
+    needle: [255, 110, 24, 255], mneedle: [255, 110, 24, 255], orange: [255, 110, 24, 255], lcd: [255, 120, 30, 255],
+    night: Object.assign({}, THEMES.e36.night, {
+        needle: [255, 104, 30, 255], mneedle: [255, 104, 30, 255], lcd: [255, 112, 44, 255],
+    }),
+});
 // every theme: the shift-point red, used by "hot" (the gear and SHIFT at the shift point, the rev bar past it)
 Object.keys(THEMES).forEach((k) => { THEMES[k].hot = [255, 42, 42, 255]; });
 
