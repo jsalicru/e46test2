@@ -1756,7 +1756,7 @@ precision mediump float;
 varying vec2 v_uv;
 uniform vec2 u_size;
 uniform vec2 u_origin;
-uniform vec3 u_col[12];    // bezel, face, dial, mark, needle, hub, red, blue, orange, well, strip, bg
+uniform vec3 u_col[14];    // bezel, face, dial, mark, needle, hub, red, blue, orange, well, strip, bg, yellow, lamp
 uniform vec4 u_face;       // the face's box: x0, y0, x1, y1
 uniform vec4 u_faceB;      // its corner radius, the arch's centre x, y and radius
 uniform float u_bezel;     // the black bezel round the face, px
@@ -1765,12 +1765,14 @@ uniform vec2 u_piv[4];     // their needles' pivots (the ticks and zones turn ro
 uniform vec4 u_tick[10];   // tick groups: first angle, last angle, count (0 = none), outer radius
 uniform vec4 u_tickB[10];  // length, width, dial index (they turn round its pivot), (unused)
 uniform vec4 u_zone[6];    // zones: from angle, to angle, inner radius, outer radius
-uniform vec2 u_zoneB[6];   // dial index (round its pivot); colour 0 red, 1 blue, 2 orange (-1 none) + 4 x stripes
+uniform vec2 u_zoneB[6];   // dial index (round its pivot); colour 0 red, 1 blue, 2 orange, 3 yellow (-1 none) + 4 x stripes
 uniform vec4 u_win[3];     // windows (LCD, top lamp, ASC or the M3's /M plate): x, y, w, h (w 0 = none)
 uniform vec3 u_winR;       // their corner radii
 uniform float u_light;     // daylight: 1 by day, 0 at night (the glass's glare goes, the depth stays)
 uniform vec4 u_strip[3];   // the warning-light strips: x, y, w, h (w 0 = none)
 uniform float u_stripR;    // their corner radius
+uniform float u_chrome;    // a chrome ring round every dial, px wide (0 = none: the E36's plain rim)
+uniform vec2 u_cutK;      // a cut dial's corners: the slope of the shoulders down to the flat, the flat's half width (0 = square)
 
 float cov(float d) { return clamp(0.5 - d, 0.0, 1.0); }
 vec3 put(vec3 c, vec3 col, float a) { return mix(c, col, clamp(a, 0.0, 1.0)); }
@@ -1802,23 +1804,34 @@ void main() {
     float K = -1.0;
     vec2 V = vec2(0.0);
     vec4 G = vec4(0.0);
+    // the LCD sits in the speedometer (the E36) only when it is centred under it; else it is a window of its own (the E46)
+    vec4 w = u_win[0];
+    bool lcdIn = w.z > 0.0 && abs(w.x + w.z * 0.5 - u_dial[1].x) < u_dial[1].z * 0.5;
     for (int i = 0; i < 4; i++) {
         vec4 g = u_dial[i];
-        if (length(p - g.xy) - g.z > 6.0) continue;
+        if (length(p - g.xy) - g.z > 9.0 + u_chrome) continue;
         K = float(i); V = u_piv[i]; G = g;
     }
     if (K >= 0.0) {
         float dc = length(p - G.xy) - G.z;
         // a cut dial ends flat, its rim along the flat (the rev counter just under the economy gauge's ticks);
         // the speedometer ends just under the LCD (u_win[0])
-        vec4 w = u_win[0];
-        bool lcd = K == 1.0 && w.z > 0.0;
+        bool lcd = K == 1.0 && lcdIn;
         float bot = w.y + w.w;
-        float cut = lcd ? p.y - bot - 4.0 : G.w > 0.0 ? p.y - G.w : -1.0;
+        float fc = p.y - G.w;
+        if (u_cutK.x > 0.0) fc = max(fc, (fc + (abs(p.x - G.x) - u_cutK.y) * u_cutK.x) / sqrt(1.0 + u_cutK.x * u_cutK.x));
+        float cut = lcd ? p.y - bot - 4.0 : G.w > 0.0 ? fc : -1.0;
         // the dial sits in a well: its wall dark at the top (facing down), lit at the bottom (facing up); the black dial
         // a shade lighter below its centre, where the light reaches
         float low = clamp((p.y - G.y) / G.z * 0.7 + 0.5, 0.0, 1.0);
-        c = put(c, mix(BEZEL * 0.5, FACE * 0.9, low * low), cov(max(dc - 4.0, cut - 4.0)));
+        float edge = max(dc, cut);
+        c = put(c, mix(BEZEL * 0.5, FACE * 0.9, low * low), cov(edge - 4.0));
+        if (u_chrome > 0.0) {
+            // a polished ring just outside the rim: bright along its middle, lit from above
+            float t = clamp((edge - 3.0) / u_chrome, 0.0, 1.0);
+            float sheen = 1.0 - abs(2.0 * t - 1.0);
+            c = put(c, vec3(0.93, 0.93, 0.95) * (0.38 + 0.62 * sqrt(sheen)) * (0.78 + 0.22 * low), cov(abs(edge - 3.0 - u_chrome * 0.5) - u_chrome * 0.5));
+        }
         float inDial = cov(max(dc, cut));
         c = put(c, u_col[2] + 0.03 * (1.0 - smoothstep(0.0, G.z, length(p - G.xy - vec2(0.0, G.z * 0.3)))), inDial);
         if (lcd) {
@@ -1839,7 +1852,7 @@ void main() {
             float dd = max(radians(max(z.x - a, a - z.y)) * r, max(z.z - r, r - z.w));
             float n = floor(b.y / 4.0), k = b.y - n * 4.0;
             if (n > 0.0) dd = max(dd, (abs(fract((a - z.x) / (z.y - z.x) * n) - 0.3) - 0.3) * radians(z.y - z.x) / n * r);
-            c = put(c, k < 0.5 ? u_col[6] : k < 1.5 ? u_col[7] : u_col[8], cov(dd));
+            c = put(c, k < 0.5 ? u_col[6] : k < 1.5 ? u_col[7] : k < 2.5 ? u_col[8] : u_col[12], cov(dd));
         }
 
         // the ticks, evenly spaced in each group
@@ -1861,12 +1874,12 @@ void main() {
     for (int i = 0; i < 3; i++) {
         float rad = i == 0 ? u_winR.x : i == 1 ? u_winR.y : u_winR.z;
         float d = boxd(p, u_win[i], rad);
-        if (i == 0) d = max(d, dsp);
+        if (i == 0 && lcdIn) d = max(d, dsp);
         float on = step(0.5, u_win[i].z);
         // sunk like the dials: the frame dark at the top, lit at the bottom, the top edge's shade inside
         float low = clamp((p.y - u_win[i].y) / max(u_win[i].w, 1.0), 0.0, 1.0);
         c = put(c, mix(BEZEL * 0.6, FACE * 0.9, low), cov(d - 2.0) * on);
-        c = put(c, u_col[9] * (1.0 - 0.5 * smoothstep(-10.0, 2.0, boxd(p - vec2(0.0, 7.0), u_win[i], rad))), cov(d) * on);
+        c = put(c, (i == 0 ? u_col[9] : u_col[13]) * (1.0 - 0.5 * smoothstep(-10.0, 2.0, boxd(p - vec2(0.0, 7.0), u_win[i], rad))), cov(d) * on);
     }
 
     // the cluster is lit from the middle: its ends fall off a little
@@ -1968,6 +1981,7 @@ uniform vec2 u_econB;      // its angle, width
 uniform vec4 u_cham;       // the window's top corners: left corner x, its slope down to the left, right corner x, its slope
 uniform vec4 u_tach;       // the rev counter's centre x, y, radius, flat cut y (the window ends at its edge and cut)
 uniform float u_light;     // daylight: 1 by day, 0 at night (softer shadows)
+uniform float u_econH;     // the economy (oil) needle's hub radius, cut off with the window (0 = none: the E36's)
 
 float cov(float d) { return clamp(0.5 - d, 0.0, 1.0); }
 vec2 dir(float a) { float r = radians(a); return vec2(sin(r), -cos(r)); }
@@ -2006,6 +2020,10 @@ void main() {
         float t = dot(ed, u), side = abs(ed.x * u.y - ed.y * u.x);
         float n = cov(max(side - u_econB.y * 0.5, max(-t, t - u_econ.z))) * inWin;
         c = mix(c, u_col[0], n); al = max(al, n);
+        if (u_econH > 0.0) {
+            float hb = cov(max(length(ed) - u_econH, p.y - u_tach.w + 1.0));
+            c = mix(c, u_col[1], hb); al = max(al, hb);
+        }
     }
 
     // the dials' needles never reach each other: the one this pixel is near (if any) is found once, then drawn
