@@ -1774,8 +1774,9 @@ uniform vec3 u_winR;       // their corner radii
 uniform float u_light;     // daylight: 1 by day, 0 at night (the glass's glare goes, the depth stays)
 uniform vec4 u_strip[3];   // the warning-light strips: x, y, w, h (w 0 = none)
 uniform float u_stripR;    // their corner radius
-uniform vec2 u_e46;        // the E46's extras (0, 0 for the E36): a chrome ring round every dial, px wide; striped zones as
-                           // lamps (1: rounded, the lit ones glowing), and then the lamp windows black, not the LCD's colour
+uniform vec3 u_e46;        // the E46's extras (0, 0, 0 for the E36): a chrome ring round every dial, px wide; striped zones as
+                           // lamps (1: rounded, the lit ones glowing), and then the lamp windows black, not the LCD's colour;
+                           // how many of the yellow warm-up lamps are out, from the lowest (hud.js, by the oil temperature)
 
 float cov(float d) { return clamp(0.5 - d, 0.0, 1.0); }
 vec3 put(vec3 c, vec3 col, float a) { return mix(c, col, clamp(a, 0.0, 1.0)); }
@@ -1881,9 +1882,12 @@ void main() {
             vec3 zc = k < 0.5 ? u_col[6] : k < 1.5 ? u_col[7] : k < 2.5 ? u_col[8]
                 : k < 3.5 ? vec3(u_col[8].r, min(1.0, u_col[8].g * 1.37), u_col[8].b) : mix(u_col[2], MARK, 0.22);
             if (n > 0.0 && u_e46.y > 0.5) {
-                // a lamp in the middle of each of the n steps: a capsule along the arc, 40 % of a step long
+                // a lamp in the middle of each of the n steps: a capsule along the arc, 40 % of a step long; a yellow
+                // (warm-up) lamp below the count that is out is drawn unlit
                 float st = (z.y - z.x) / n;
-                float ac = z.x + st * (floor(clamp((a - z.x) / st, 0.0, n - 0.001)) + 0.5);
+                float li = floor(clamp((a - z.x) / st, 0.0, n - 0.001));
+                if (k > 2.5 && k < 3.5 && li < u_e46.z) { k = 4.0; zc = mix(u_col[2], MARK, 0.22); }
+                float ac = z.x + st * (li + 0.5);
                 float hw = (z.w - z.z) * 0.5;
                 vec2 q = vec2(abs(radians(a - ac)) * r, r - (z.z + z.w) * 0.5);
                 float dp = length(vec2(max(q.x - max(radians(st) * r * 0.2 - hw, 0.0), 0.0), q.y)) - hw;

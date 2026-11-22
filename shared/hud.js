@@ -2215,7 +2215,7 @@ class HudApp {
             // "needleColor": another role for the needles (the M3 face's red ones)
             c.uniform(ref, 'u_col', flat(E36_ROLES.map((r) => rgb(color(t, r === 'needle' && w.needleColor ? w.needleColor : r)))), { type: 'vec3' });
             // the E46's extras (gen_e46.py): chrome rings, lamp zones (and black lamp windows); none on the E36
-            c.uniform(ref, 'u_e46', [w.chrome || 0, w.pill ? 1 : 0]);
+            c.uniform(ref, 'u_e46', [w.chrome || 0, w.pill ? 1 : 0, 0]);
             c.uniform(ref, 'u_face', F.box);
             c.uniform(ref, 'u_faceB', [F.radius, F.arch[0], F.arch[1], F.arch[2]]);
             c.uniform(ref, 'u_bezel', [F.bezel || 0]);
@@ -2799,6 +2799,16 @@ class HudApp {
             x.last = key;
             x.c.uniform(x.ref, 'u_value', [q]);
             x.c.uniform(x.ref, 'u_flash', [this.flash ? 1 : 0]);
+        } else if (w.type === 'e36dash' && w.warm) {
+            // the E46 M3's warm-up lamps ("warm": [from F, to F, lamps]): all lit while the oil is colder than "from",
+            // then going out one by one from the lowest as it warms, all out at "to"; lit without oil data
+            const oil = this._raw('oil');
+            const [lo, hi, n] = w.warm;
+            const f = isNum(oil) ? oil * 9 / 5 + 32 : null;
+            const off = f === null ? 0 : Math.max(0, Math.min(n, Math.floor((f - lo) / (hi - lo) * n)));
+            if (!force && off === x.last) return;
+            x.last = off;
+            x.c.uniform(x.ref, 'u_e46', [w.chrome || 0, w.pill ? 1 : 0, off]);
         } else if (w.type === 'shiftbar' || w.type === 'revarc') {
             const rpm = this._raw('rpm');
             const segs = w.segments || (w.type === 'revarc' ? 30 : 40);
