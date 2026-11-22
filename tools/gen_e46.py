@@ -42,9 +42,12 @@ GAP = 3
 # --- the dials (render px): centre, the dial face's radius, the flat cut, the pivot -----------------------------------
 SPD = {'c': (657.4, 347.9), 'r': 290, 'cut': 607}
 TACH = {'c': (1313.3, 350.0), 'r': 290, 'cut': 607}
-CUT_K = (0.72, 196)            # the big dials' shoulders: slope, the flat's half width (render px)
-FUEL = {'c': (189.6, 466.0), 'r': 155, 'pivot': (189.6, 560.0)}
-COOL = {'c': (1793.5, 466.0), 'r': 155, 'pivot': (1793.5, 560.0)}
+# each dial's foot: (the flat's half width, the shoulders' slope, mode): the big dials cut flat with sloped shoulders
+# (mode 1); the small ones widen below their centre down to a flat wider than the circle (mode 2, the hull)
+BIG_FOOT = (196, 0.72, 1)
+SMALL_FOOT = (95, 0, 2)
+FUEL = {'c': (189.6, 466.0), 'r': 155, 'cut': 615, 'pivot': (189.6, 560.0)}
+COOL = {'c': (1793.5, 466.0), 'r': 155, 'cut': 615, 'pivot': (1793.5, 560.0)}
 
 
 def mph_ang(v):
@@ -67,19 +70,24 @@ TICKS = [
     [1, kmh_ang(20), kmh_ang(300), 15, 178, 12, 4],           # the inner km/h ring, every 20
     [2, rpm_ang(0), rpm_ang(9), 10, 279, 34, 10],             # 0 .. 9 thousand
     [2, rpm_ang(0.5), rpm_ang(8.5), 9, 279, 20, 5],           # the halves
-    [0, -23, 23, 3, 150, 22, 5],                              # fuel: 1/4 1/2 3/4
-    [3, -16, 16, 3, 150, 20, 5],                              # coolant
+    [0, -23, 23, 3, 172, 22, 6.5],                            # fuel: 1/4 1/2 3/4 (round the low pivot, near the rim)
+    [3, -17, 17, 3, 192, 20, 6.5],                            # coolant
 ]
 # [dial, from angle, to angle, inner radius, outer radius, colour(, stripes)]
 ZONES = [
     [2, rpm_ang(7.5), rpm_ang(9.0) + 1.0, 248, 281, 'red'],
-    [2, rpm_ang(3.4), rpm_ang(5.9), 255, 274, 'yellow', 6],   # the E46 M3's warm-up / pre-warning lights
-    [3, -41, -31, 136, 158, 'blue'],
-    [3, 29, 39, 136, 158, 'red'],
+    # the E46 M3's warm-up lamps: one at each quarter between the ticks (2750 .. 7250), lit from 3750 to 5750 (the first
+    # orange, the rest yellow) as the render shows them; drawn as lamps ("pill") with a glow
+    [2, rpm_ang(2.5), rpm_ang(3.5), 256, 272, 'unlit', 2],
+    [2, rpm_ang(3.5), rpm_ang(4.0), 256, 272, 'orange', 1],
+    [2, rpm_ang(4.0), rpm_ang(6.0), 256, 272, 'yellow', 4],
+    [2, rpm_ang(6.0), rpm_ang(7.5), 256, 272, 'unlit', 3],
+    [3, -42, -31, 168, 200, 'blue'],
+    [3, 30, 41, 168, 200, 'red'],
 ]
 
 # the figures: (text, font, angle, radius of their ink's centre)
-FIG_R = {'mph': 212, 'km': 133, 'rpm': 212}
+FIG_R = {'mph': 212, 'km': 128, 'rpm': 212}
 FIGURES_SPD = ([(str(v), 'e4_big', mph_ang(v), FIG_R['mph'] if v else 218) for v in range(0, 181, 20)]
                + [(str(v), 'e4_km', kmh_ang(v), FIG_R['km']) for v in range(20, 301, 20)])
 FIGURES_TACH = [(str(k), 'e4_big', rpm_ang(k), FIG_R['rpm'] + (8 if k in (0, 9) else 0)) for k in range(10)]
@@ -92,7 +100,7 @@ TEXTS = [
     ('120', 'e4_gl', 1205, 511), ('210', 'e4_gl', 1320, 485), ('300', 'e4_gl', 1432, 513), ('°F', 'e4_gl', 1385, 565),
 ]
 # icons: (name, centre x, y, box size) render px; the /M badge its own size
-ICONS = [('fuel', 196, 456, 56), ('e36cool', 1795, 450, 58), ('oilcan', 1320, 524, 64)]
+ICONS = [('fuel', 197, 452, 62), ('e36cool', 1797, 452, 68), ('e46oil', 1320, 527, 72)]
 LOGO = ('e36m', 660, 503, 96, 34)
 
 # the oil gauge at the rev counter's foot: upright, 120 .. 300 F, its pivot on the flat
@@ -131,15 +139,17 @@ def text_at(wid, text, fname, cx, cy, color='mark', align='center'):
 def layout():
     dials, needles = [], []
     spec = [  # (dial, signal, pivot, needle length, width, hub, tail, map, rest)
-        (FUEL, 'fuel', FUEL['pivot'], 150, 7, 40, 0, [(0, -40), (1, 40)], -46),
+        (FUEL, 'fuel', FUEL['pivot'], 168, 10, 46, 0, [(0, -40), (1, 40)], -46),
         (SPD, 'speed', SPD['c'], 262, 9, 45, 0, [(0, mph_ang(0)), (180, mph_ang(180)), (200, mph_ang(180) + 4)], mph_ang(0) - 3),
         (TACH, 'rpm', TACH['c'], 262, 9, 45, 0, [(0, rpm_ang(0)), (9000, rpm_ang(9)), (9600, rpm_ang(9) + 4)], rpm_ang(0) - 3),
-        (COOL, 'coolant', COOL['pivot'], 150, 7, 40, 0,
-         [(40, -46), (50, -36), (80, -10), (85, 0), (105, 0), (115, 20), (120, 34), (130, 44)], -46),
+        (COOL, 'coolant', COOL['pivot'], 168, 10, 46, 0,
+         [(40, -47), (50, -36.5), (80, -12), (85, 0), (105, 0), (115, 18), (120, 35.5), (130, 45)], -47),
     ]
     for d, sig, piv, nl, nw, hub, tail, mp, rest in spec:
         cut = T(0, d['cut'])[1] if d.get('cut') else 0
-        dials.append({'c': list(T(*d['c'])), 'r': L(d['r']), 'cut': cut, 'pivot': list(T(*piv))})
+        ft = SMALL_FOOT if d in (FUEL, COOL) else BIG_FOOT
+        dials.append({'c': list(T(*d['c'])), 'r': L(d['r']), 'cut': cut, 'pivot': list(T(*piv)),
+                      'foot': [L(ft[0]), ft[1], ft[2]]})
         needles.append({'signal': sig, 'pivot': list(T(*piv)), 'hub': L(hub), 'tail': L(tail), 'needle': [L(nl), L(nw)],
                         'map': [[v, round(a, 2)] for v, a in mp], 'rest': round(rest, 2)})
 
@@ -152,7 +162,7 @@ def layout():
         'zones': [zone(z) for z in ZONES],
         'windows': [list(T(x, y)) + [L(w), L(h), L(r)] if w else [0, 0, 0, 0, 0] for x, y, w, h, r in WINDOWS],
         'strips': STRIPS, 'stripR': STRIP_R,
-        'chrome': CHROME, 'cutK': [CUT_K[0], L(CUT_K[1])],
+        'chrome': CHROME, 'pill': True,
     }
 
     # the oil gauge: its ticks (target px) and the needle's scale
