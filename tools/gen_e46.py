@@ -47,6 +47,9 @@ GAP = 3
 # --- the dials (render px): centre, the dial face's radius, the flat cut, the pivot -----------------------------------
 SPD = {'c': (657.4, 347.9), 'r': 290, 'cut': 607}
 TACH = {'c': (1313.3, 350.0), 'r': 290, 'cut': 607}
+# the warm-up lamps: all lit below WARM[0] F oil, one by one out as it climbs, all out at WARM[1]; WARM[2] lamps
+WARM = (100, 160, 6)
+
 # each dial's foot: (the flat's half width, the shoulders' slope, mode): the big dials cut flat with sloped shoulders
 # (mode 1); the small ones are plain circles cut flat just above their foot, no shoulders (their chrome ring, traced off
 # the render: a circle r 163.5 round (180.5, 476), flat at y 620)
@@ -81,36 +84,39 @@ TICKS = [
 ]
 # [dial, from angle, to angle, inner radius, outer radius, colour(, stripes)]
 ZONES = [
-    [2, rpm_ang(7.5), rpm_ang(9.0) + 1.0, 248, 281, 'red'],
-    # the E46 M3's warm-up lamps: one at each quarter between the ticks (2750 .. 7250), lit from 3750 to 5750 (the first
-    # orange, the rest yellow) as the render shows them; drawn as lamps ("pill") with a glow
-    # (the shader takes 6 zones: one unlit row of all ten, the lit ones drawn over it)
-    [2, rpm_ang(2.5), rpm_ang(7.5), 256, 272, 'unlit', 10],
-    [2, rpm_ang(3.5), rpm_ang(4.0), 256, 272, 'orange', 1],
-    [2, rpm_ang(4.0), rpm_ang(6.0), 256, 272, 'yellow', 4],
+    # the E46 M3's lamps round the rev counter's rim, one in each 500 rpm step from 4000: yellow to 7000 (the warm-up
+    # lamps: hud.js puts them out one by one from the lowest as the oil warms, WARM), orange to 7500, red to 9000 (always lit)
+    [2, rpm_ang(4.0), rpm_ang(7.0), 256, 272, 'yellow', 6],
+    [2, rpm_ang(7.0), rpm_ang(7.5), 256, 272, 'orange', 1],
+    [2, rpm_ang(7.5), rpm_ang(9.0), 256, 272, 'red', 3],
     [3, -42, -31, 168, 200, 'blue'],
     [3, 30, 41, 168, 200, 'red'],
 ]
 
-# the figures: (text, font, angle, the ring they sit just inside: its radius, render px). Each figure is moved in from
-# the ring until its ink box clears it by FIG_GAP, so every one sits as close to its ticks as the render's do: the MPH
-# and rpm figures inside the long ticks' inner ends, the km/h ones inside their own short ticks.
-FIG_GAP = 7
-RING = {'mph': 279 - 34, 'km': 152, 'rpm': 279 - 34}
-FIGURES_SPD = ([(str(v), 'e4_big', mph_ang(v), RING['mph']) for v in range(0, 181, 20)]
-               # the render leaves out 180 on the inner ring (its tick stays): it gives the top figures room
-               + [(str(v), 'e4_km', kmh_ang(v), RING['km']) for v in range(20, 301, 20) if v != 180])
-FIGURES_TACH = [(str(k), 'e4_big', rpm_ang(k), RING['rpm']) for k in range(10)]
-
-# print placed by its ink's centre: (text, font, x, y) render px
+# The print, measured off the render (tools/measure_e46.py would redo it: the peach ink's boxes, render px): every
+# figure, label and icon is placed by its ink's centre where the render has it, and the fonts are fitted to the
+# render's ink sizes (tools/bake_e46_fonts.py).
+MPH_AT = {0: (501.0, 497.0), 20: (456.5, 414.0), 40: (446.5, 309.0), 60: (497.5, 210.0), 80: (587.5, 143.0),
+          100: (708.5, 138.0), 120: (805.0, 197.0), 140: (865.5, 295.0), 160: (863.0, 396.0), 180: (813.0, 497.0)}
+RPM_AT = {0: (1117.0, 450.0), 1: (1086.5, 362.0), 2: (1117.5, 268.0), 3: (1173.5, 195.5), 4: (1262.0, 145.5),
+          5: (1370.0, 146.0), 6: (1454.5, 194.0), 7: (1516.0, 274.0), 8: (1540.5, 362.0), 9: (1517.5, 454.0)}
+KM_R = 137          # the inner km/h figures' ink centres from the pivot (the render's, 130 .. 142); on the true scale
+FIGURES = ([('fs_%d' % v, str(v), 'e4_big') + MPH_AT[v] for v in range(0, 181, 20)]
+           + [('ft_%d' % k, str(k), 'e4_rpm') + RPM_AT[k] for k in range(10)]
+           # the render leaves out 180 on the inner ring (its tick stays): it gives the top figures room
+           + [('fk_%d' % v, str(v), 'e4_km', SPD['c'][0] + KM_R * math.sin(math.radians(kmh_ang(v))),
+               SPD['c'][1] - KM_R * math.cos(math.radians(kmh_ang(v)))) for v in range(20, 301, 20) if v != 180])
 TEXTS = [
-    ('km/h', 'e4_sm', 665, 452), ('MPH', 'e4_lab', 662, 556),
-    ('1/min', 'e4_lab', 1315, 218), ('x1000', 'e4_lab', 1315, 251),
-    ('0', 'e4_gl', 78, 429), ('1/2', 'e4_gl', 192, 364), ('1/1', 'e4_gl', 290, 429),
-    ('120', 'e4_oil', 1205, 511), ('210', 'e4_oil', 1320, 485), ('300', 'e4_oil', 1432, 513), ('°F', 'e4_oil', 1385, 565),
+    ('km/h', 'e4_sm', 665.0, 450.5), ('MPH', 'e4_mph', 662.0, 555.5),
+    ('1/min', 'e4_lab', 1315.0, 218.0), ('x1000', 'e4_lab', 1314.0, 250.5),
+    ('0', 'e4_gl', 78.5, 428.0), ('1/2', 'e4_gl', 192.5, 364.0), ('1/1', 'e4_gl', 288.5, 429.0),
+    ('120', 'e4_oil', 1205.5, 509.5), ('210', 'e4_oil', 1320.5, 483.5), ('300', 'e4_oil', 1432.5, 514.0),
+    ('°F', 'e4_degf', 1383.5, 564.5),
 ]
-# icons: (name, centre x, y, box size) render px; the /M badge its own size
-ICONS = [('fuel', 197, 452, 50), ('e36cool', 1797, 452, 54), ('e46oil', 1320, 530, 58)]
+# icons by their ink: (name, ink centre x, y, ink height or width ('h' / 'w'), render px); ICON_INK: where each icon's
+# ink lies in its square (shared/icons.js, measured: x0, x1, y0, y1 as fractions)
+ICONS = [('fuel', 200.5, 455.5, 45, 'h'), ('e36cool', 1793.5, 446.0, 52, 'h'), ('e46oil', 1319.0, 530.5, 60, 'w')]
+ICON_INK = {'fuel': (0.080, 0.797, 0.220, 0.938), 'e36cool': (0.140, 0.858, 0.040, 0.978), 'e46oil': (0.035, 0.963, 0.247, 0.715)}
 LOGO = ('e36m', 660, 503, 96, 34)
 
 # the oil gauge at the rev counter's foot: upright, 120 .. 300 F, its pivot on the flat
@@ -146,21 +152,6 @@ def text_at(wid, text, fname, cx, cy, color='mark', align='center'):
             'w': w, 'h': h, 'text': text, 'font': fname, 'color': color, 'align': align}
 
 
-def figure_xy(text, fname, centre, ang, ring):
-    """Target px of a figure's ink centre: the furthest out along its angle where its ink box keeps FIG_GAP from the ring."""
-    hw, hh, dx, dy = ink(text, fname)
-    cx, cy = T(*centre)
-    ux, uy = math.sin(math.radians(ang)), -math.cos(math.radians(ang))
-    r = L(ring)
-    while r > 0:
-        bx, by = cx + ux * r, cy + uy * r
-        far = max(math.hypot(bx + sx * hw - cx, by + sy * hh - cy) for sx in (-1, 1) for sy in (-1, 1))
-        if far <= L(ring) - L(FIG_GAP):
-            return bx, by
-        r -= 0.25
-    raise SystemExit('no room for the figure ' + text)
-
-
 def layout():
     dials, needles = [], []
     spec = [  # (dial, signal, pivot, needle length, width, hub, tail, map, rest)
@@ -187,7 +178,7 @@ def layout():
         'zones': [zone(z) for z in ZONES],
         'windows': [list(T(x, y)) + [L(w), L(h), L(r)] if w else [0, 0, 0, 0, 0] for x, y, w, h, r in WINDOWS],
         'strips': STRIPS, 'stripR': STRIP_R,
-        'chrome': CHROME, 'pill': True,
+        'chrome': CHROME, 'pill': True, 'warm': list(WARM),
     }
 
     # the oil gauge: its ticks (target px) and the needle's scale
@@ -226,18 +217,18 @@ def layout():
 
     # the print
     texts = []
-    for i, (t, fn, ang, ring) in enumerate(FIGURES_SPD):
-        texts.append(text_at('fs_%d' % i, t, fn, *figure_xy(t, fn, SPD['c'], ang, ring)))
-    for i, (t, fn, ang, ring) in enumerate(FIGURES_TACH):
-        texts.append(text_at('ft_%d' % i, t, fn, *figure_xy(t, fn, TACH['c'], ang, ring)))
+    for wid, t, fn, x, y in FIGURES:
+        texts.append(text_at(wid, t, fn, *T(x, y)))
     for i, (t, fn, x, y) in enumerate(TEXTS):
         texts.append(text_at('tx_%d' % i, t, fn, *T(x, y)))
     icons = []
-    for name, x, y, sz in ICONS:
-        cx_, cy_ = T(x, y)
+    for name, x, y, size, by in ICONS:
+        x0, x1, y0, y1 = ICON_INK[name]
+        box = L(size) / ((x1 - x0) if by == 'w' else (y1 - y0))      # the square whose ink is that big
+        ix, iy = T(x, y)
+        bx, by_ = ix - ((x0 + x1) / 2 - 0.5) * box, iy - ((y0 + y1) / 2 - 0.5) * box
         icons.append({'id': 'ic_' + name, 'type': 'icon', 'icon': name, 'class': 'content', 'z': 5,
-                      'x': round(cx_ - L(sz) / 2), 'y': round(cy_ - L(sz) / 2), 'w': round(L(sz)), 'h': round(L(sz)),
-                      'color': 'mark'})
+                      'x': round(bx - box / 2), 'y': round(by_ - box / 2), 'w': round(box), 'h': round(box), 'color': 'mark'})
     name, x, y, lw, lh = LOGO
     cx_, cy_ = T(x, y)
     icons.append({'id': 'ic_' + name, 'type': 'icon', 'icon': name, 'class': 'content', 'z': 5,
