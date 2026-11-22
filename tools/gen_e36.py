@@ -393,7 +393,9 @@ US.update({
     'photo': 'us-mph-day-face.png',
     'mph': True,
 })
-US['dials'][1]['map'] = [(0, -121), (20, mph_ang(20)), (150, mph_ang(150))]
+# the needle: its first notch is 0, the next 10, then 20; from 20 on a notch every 5 mph (the car, Nov 22 2026: at rest it
+# sat under the first notch)
+US['dials'][1]['map'] = [(0, mph_ang(10)), (10, mph_ang(15)), (20, mph_ang(20)), (150, mph_ang(150))]
 US['dials'][1]['rest'] = -121
 US['ticks'] = [
     [1, mph_ang(10), mph_ang(150), 15, 228, 28.5, 8.3],                 # 10 .. 150 mph
@@ -498,7 +500,9 @@ def m3_face(base, us):
     spd = f['dials'][1]
     if us:
         a, km = m3_mph_ang, lambda v: m3_mph_ang(v * 0.621371)
-        spd['map'], spd['rest'] = [(0, -137), (10, a(10)), (170, a(170))], -137
+        # the first notch is 0, the next 10, then 20; from 20 on a notch every 5 mph (it read 10 on the first notch and
+        # sat 15 degrees under it at a standstill)
+        spd['map'], spd['rest'] = [(0, a(10)), (10, a(15)), (20, a(20)), (170, a(170))], -137
         # the US photo's rings (after the ellipse) scaled to the 328i US face's outer ring (228)
         f['ticks'] = [
             [1, a(10), a(170), 17, 228, 27.6, 8.3],                 # 10 .. 170 MPH
