@@ -33,7 +33,7 @@ FIT = [
     ('e4_km', SEMI, D, '260', 20, 38),                   # the inner km/h ring
     ('e4_mph', SEMI, 'MPH', 'MPH', 25, 64),              # MPH under the badge: spaced out
     ('e4_lab', SEMI, U + L + D + ' /', 'x1000', 25, 78), # 1/min, x1000: set tight
-    ('e4_sm', SEMI, U + L + D + ' /', 'km/h', 21, 52),   # km/h, miles, the LCD's units
+    ('e4_sm', SEMI, U + L + D + ' /°', 'km/h', 21, 52),  # km/h, miles, the LCD's units (°F / °C)
     ('e4_gl', SEMIBOLD, D + '/', '0', 28, 17),           # the fuel gauge's 0, 1/2, 1/1 (width from 1/1 below)
     ('e4_oil', SEMI, D, '210', 29, 51),                  # the oil gauge's 120 210 300
     ('e4_degf', SEMI, '°F', '°F', 25, 25),               # its °F
