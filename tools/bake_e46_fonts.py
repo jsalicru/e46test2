@@ -23,10 +23,10 @@ D, U, L = bf.DIGITS, bf.UPPER, bf.LOWER
 
 FONTS = [
     ('e4_big', SEMI, 54, D),                          # the MPH figures and the rev counter's 0 .. 9
-    ('e4_km', SEMI, 30, D),                           # the inner km/h ring
-    ('e4_lab', SEMI, 31, U + L + D + ' /°'),          # 1/min, x1000, MPH
-    ('e4_sm', SEMI, 26, U + L + D + ' /°'),           # km/h, miles, °F
-    ('e4_gl', SEMI, 36, D + '/°F'),                   # the small gauges' and the oil gauge's figures
+    ('e4_km', SEMI, 27, D),                           # the inner km/h ring
+    ('e4_lab', SEMI, 34, U + L + D + ' /°'),          # 1/min, x1000, MPH
+    ('e4_sm', SEMI, 27, U + L + D + ' /°'),           # km/h, miles, °F
+    ('e4_gl', SEMI, 40, D + '/°F'),                   # the small gauges' and the oil gauge's figures
     ('e4_lcd', 'DSEG7Classic-Bold.ttf', 40, D + '-.: '),
 ]
 

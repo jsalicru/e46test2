@@ -70,6 +70,16 @@ const ICONS = {
     // on the right (its ink, unit x 0.08 .. 0.8 and y 0.22 .. 0.94, scaled to x 0.2 .. 1.2, y 0 .. 1)
     e36range: (x, y) => Math.min(seg(x, y, -0.15, 0.5, 0.1, 0.5) - 0.055, seg(x, y, 0.1, 0.5, -0.02, 0.38) - 0.055,
         seg(x, y, 0.1, 0.5, -0.02, 0.62) - 0.055, ICONS.fuel(0.08 + (x - 0.2) * 0.72, 0.22 + y * 0.72) / 0.72),
+    // E46 M3: the oil gauge's oil can, as BMW prints it (design/e46m3-reference.png): an outlined can with its handle loop
+    // on the left, the filler cap on top, the spout rising to the right and a drop under its tip
+    e46oil: (x, y) => {
+        const line = (pts, w) => Math.min(...pts.slice(1).map((q, i) => seg(x, y, pts[i][0], pts[i][1], q[0], q[1]) - w));
+        return Math.min(
+            line([[0.24, 0.42], [0.56, 0.42], [0.66, 0.5], [0.93, 0.36], [0.68, 0.62], [0.68, 0.68], [0.24, 0.68], [0.24, 0.42]], 0.036),
+            line([[0.24, 0.45], [0.07, 0.4], [0.07, 0.53], [0.24, 0.6]], 0.034),
+            seg(x, y, 0.4, 0.42, 0.4, 0.3) - 0.036, seg(x, y, 0.31, 0.29, 0.49, 0.29) - 0.042,
+            disc(x, y, 0.93, 0.62, 0.035), seg(x, y, 0.93, 0.5, 0.93, 0.6) - 0.018);
+    },
     oilcan: (x, y) => Math.min(seg(x, y, 0.2, 0.62, 0.6, 0.62) - 0.12, seg(x, y, 0.6, 0.58, 0.9, 0.44) - 0.04, disc(x, y, 0.92, 0.66, 0.05), seg(x, y, 0.3, 0.46, 0.3, 0.34) - 0.035, seg(x, y, 0.22, 0.34, 0.38, 0.34) - 0.04),
 };
 

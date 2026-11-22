@@ -269,13 +269,13 @@ THEMES.e46m3 = Object.assign({}, THEMES.e36, {
     bezel: [6, 6, 6, 255], face: [24, 24, 24, 255], dial: [58, 56, 55, 255], mark: [243, 196, 157, 255],
     needle: [250, 92, 10, 255], mneedle: [250, 92, 10, 255], hub: [20, 20, 20, 255],
     red: [236, 18, 14, 255], blue: [36, 108, 232, 255], orange: [255, 140, 0, 255], yellow: [255, 192, 0, 255],
-    well: [42, 11, 2, 255], lamp: [12, 12, 12, 255], lcd: [255, 128, 12, 255], strip: [0, 0, 0, 255],
+    well: [42, 11, 2, 255], lamp: [12, 12, 12, 255], lcd: [255, 128, 12, 255], strip: [0, 0, 0, 255], unlit: [96, 90, 84, 255],
     night: {     // the same print a shade warmer and dimmer after sunset
         fg: [232, 160, 112, 255], dim: [232, 160, 112, 255], arc: [232, 160, 112, 255], head: [232, 160, 112, 255],
         bezel: [5, 5, 5, 255], face: [18, 18, 18, 255], dial: [40, 39, 38, 255], mark: [232, 160, 112, 255],
         needle: [240, 80, 8, 255], mneedle: [240, 80, 8, 255], hub: [16, 16, 16, 255],
         red: [200, 16, 12, 255], blue: [28, 84, 180, 255], orange: [220, 120, 0, 255], yellow: [220, 176, 16, 255],
-        well: [34, 9, 2, 255], lamp: [10, 10, 10, 255], lcd: [240, 112, 10, 255], strip: [0, 0, 0, 255],
+        well: [34, 9, 2, 255], lamp: [10, 10, 10, 255], lcd: [240, 112, 10, 255], strip: [0, 0, 0, 255], unlit: [70, 66, 62, 255],
     },
 });
 // every theme: the shift-point red, used by "hot" (the gear and SHIFT at the shift point, the rev bar past it)
