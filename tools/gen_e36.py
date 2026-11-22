@@ -44,7 +44,10 @@ STRIP_R = 14
 # The hole starts just before the drive mode (its left edge 1223..1226 on both Nov 17 photos, left-aligned: SPORT
 # INDIVIDUAL runs on to 1378): the navigation's street name, centred in BMW's row, ends as far right as 1197 and stays
 # covered. BMW's range (its pump icon and figure at 107..299) stays behind the left strip: the LCD shows it, with its own icon.
-HOLES = [(1214, 1462), (1680, 1880)]
+# On the G80 M3 (car photos, Nov 22 2026) BMW's gear number and the shift programme's three lines sit either side of
+# its letter, together to about 1525: BMW draws black boxes over the theme while any of them is covered. Its electric
+# range's slot is closed: on the M3 only BMW's outside temperature showed through it (the LCD has that).
+HOLES = [(1214, 1525)]
 
 
 def lerp_ang(table, v):
