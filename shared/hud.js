@@ -354,7 +354,7 @@ const TILE_MAX = 14;       // half a flash: red, then the normal colour
 const MVIEW_RPM = 8000;            // the M view theme's rev scale: 0..8
 const MVIEW_SPEED = { us: 200, metric: 330 };
 // the E36 shader's colour roles, in u_col order (hud_themes.js e36)
-const E36_ROLES = ['bezel', 'face', 'dial', 'mark', 'needle', 'hub', 'red', 'blue', 'orange', 'well', 'strip', 'bg', 'yellow', 'lamp', 'unlit'];
+const E36_ROLES = ['bezel', 'face', 'dial', 'mark', 'needle', 'hub', 'red', 'blue', 'orange', 'well', 'strip', 'bg'];
 const E36_ZONE_COLORS = ['red', 'blue', 'orange', 'yellow', 'unlit'];      // u_zoneB's colour codes
 const VDASH_RPM = 8000;            // the Vector theme's rev counter: 0..8
 const MEDIA_IF = 'de.bmw.infotainment.hmi.hmimediastate.HmiMediaState';   // the head unit's now playing (front)
@@ -2213,22 +2213,20 @@ class HudApp {
             c.uniform(ref, 'u_size', [w.w, w.h]);
             c.uniform(ref, 'u_origin', [w.x, w.y]);
             // "needleColor": another role for the needles (the M3 face's red ones)
-            // "lamp": the top lamp's and the badge's windows (the LCD's "well" where a theme has none)
-            c.uniform(ref, 'u_col', flat(E36_ROLES.map((r) => rgb(color(t, r === 'needle' && w.needleColor ? w.needleColor : r === 'lamp' && !t.lamp ? 'well' : r)))), { type: 'vec3' });
-            c.uniform(ref, 'u_chrome', [w.chrome || 0]);
-            // each dial's foot (gen_e46.py): [flat's half width, shoulder slope, mode]; the E36's have none
-            c.uniform(ref, 'u_foot', flat(D.map((d) => (d && d.foot ? [d.foot[0], d.foot[1], d.foot[2], 0] : [0, 0, 0, 0]))), { type: 'vec4' });
-            c.uniform(ref, 'u_pill', [w.pill ? 1 : 0]);
+            c.uniform(ref, 'u_col', flat(E36_ROLES.map((r) => rgb(color(t, r === 'needle' && w.needleColor ? w.needleColor : r)))), { type: 'vec3' });
+            // the E46's extras (gen_e46.py): chrome rings, lamp zones (and black lamp windows); none on the E36
+            c.uniform(ref, 'u_e46', [w.chrome || 0, w.pill ? 1 : 0]);
             c.uniform(ref, 'u_face', F.box);
             c.uniform(ref, 'u_faceB', [F.radius, F.arch[0], F.arch[1], F.arch[2]]);
             c.uniform(ref, 'u_bezel', [F.bezel || 0]);
             c.uniform(ref, 'u_dial', flat(D.map((d) => (d ? [d.c[0], d.c[1], d.r, d.cut || 0] : [0, 0, 0, 0]))), { type: 'vec4' });
-            c.uniform(ref, 'u_piv', flat(D.map((d) => (d ? [d.pivot[0], d.pivot[1]] : [0, 0]))), { type: 'vec2' });
+            // with each dial's foot under its cut (gen_e46.py "foot": the flat's half width, the shoulders' slope); the E36's have none
+            c.uniform(ref, 'u_piv', flat(D.map((d) => (d ? [d.pivot[0], d.pivot[1], d.foot ? d.foot[0] : 0, d.foot ? d.foot[1] : 0] : [0, 0, 0, 0]))), { type: 'vec4' });
             const R = this._e36Revs(w);
             const T = pad((w.ticks || []).concat(R.ticks), 10, null);    // [dial, first angle, last angle, count, outer r, length, width]
             c.uniform(ref, 'u_tick', flat(T.map((g) => (g ? [g[1], g[2], g[3], g[4]] : [0, 0, 0, 0]))), { type: 'vec4' });
             c.uniform(ref, 'u_tickB', flat(T.map((g) => (g ? [g[5], g[6], g[0], 0] : [0, 0, -1, 0]))), { type: 'vec4' });
-            const Z = pad((w.zones || []).concat(R.zones), 8, null);    // [dial, from angle, to angle, inner r, outer r, colour, stripes]
+            const Z = pad((w.zones || []).concat(R.zones), 6, null);    // [dial, from angle, to angle, inner r, outer r, colour, stripes]
             c.uniform(ref, 'u_zone', flat(Z.map((z) => (z ? [z[1], z[2], z[3], z[4]] : [0, 0, 0, 0]))), { type: 'vec4' });
             c.uniform(ref, 'u_zoneB', flat(Z.map((z) => (z ? [z[0], E36_ZONE_COLORS.indexOf(z[5]) + 8 * (z[6] || 0)] : [-1, -1]))), { type: 'vec2' });
             const Wn = pad(w.windows || [], 3, null);   // [x, y, w, h, radius]
