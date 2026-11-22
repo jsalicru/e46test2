@@ -1765,9 +1765,9 @@ uniform vec4 u_piv[4];     // their needles' pivots (the ticks and zones turn ro
                            // cut (E46): the flat's half width (0 none), the shoulders' slope (0: the circle widened down
                            // to the flat, the hull; else the circle cut flat with sloped shoulders)
 uniform vec4 u_tick[10];   // tick groups: first angle, last angle, count (0 = none), outer radius
-uniform vec4 u_tickB[10];  // length, width, dial index (they turn round its pivot), (unused)
+uniform vec4 u_tickB[10];  // length, width, dial index (they turn round its pivot), 1: round dots (the E46's), 0: bars
 uniform vec4 u_zone[6];    // zones: from angle, to angle, inner radius, outer radius
-uniform vec2 u_zoneB[6];   // dial index (round its pivot); colour 0 red, 1 blue, 2 orange, 3 yellow, 4 an unlit lamp (-1 none)
+uniform vec2 u_zoneB[6];   // dial index (round its pivot); colour 0 red, 1 blue, 2 orange, 3 yellow, 4 an unlit lamp, 5 the print (-1 none)
                            // + 8 x stripes
 uniform vec4 u_win[3];     // windows (LCD, top lamp, ASC or the M3's /M plate): x, y, w, h (w 0 = none)
 uniform vec3 u_winR;       // their corner radii
@@ -1880,7 +1880,7 @@ void main() {
             float dd = zd;
             float n = floor(b.y / 8.0), k = b.y - n * 8.0;
             vec3 zc = k < 0.5 ? u_col[6] : k < 1.5 ? u_col[7] : k < 2.5 ? u_col[8]
-                : k < 3.5 ? vec3(u_col[8].r, min(1.0, u_col[8].g * 1.37), u_col[8].b) : mix(u_col[2], MARK, 0.22);
+                : k < 3.5 ? vec3(u_col[8].r, min(1.0, u_col[8].g * 1.37), u_col[8].b) : k < 4.5 ? mix(u_col[2], MARK, 0.22) : MARK;
             if (n > 0.0 && u_e46.y > 0.5) {
                 // a lamp in the middle of each of the n steps: a capsule along the arc, 40 % of a step long; a yellow
                 // (warm-up) lamp below the count that is out is drawn unlit
@@ -1905,7 +1905,10 @@ void main() {
             if (h.z != K || g.z <= 0.0) continue;
             float sp = g.z > 1.0 ? (g.y - g.x) / (g.z - 1.0) : 1.0;
             float k = g.z > 1.0 ? clamp(floor((a - g.x) / sp + 0.5), 0.0, g.z - 1.0) : 0.0;
-            c = put(c, MARK, cov(max(abs(radians(a - (g.x + k * sp))) * r - h.y * 0.5, max(g.w - h.x - r, r - g.w))));
+            float ta = radians(a - (g.x + k * sp));
+            float td = h.w > 0.5 ? length(vec2(ta * r, r - (g.w - h.x * 0.5))) - h.y * 0.5
+                                 : max(abs(ta) * r - h.y * 0.5, max(g.w - h.x - r, r - g.w));
+            c = put(c, MARK, cov(td));
         }
 
         // the rim's shadow on the dial and its print, the light from above: where the point a little above is under the
@@ -1968,7 +1971,7 @@ uniform vec4 u_econ;       // (unused), (unused), (unused), the window's top y
 uniform vec4 u_cham;       // the window's top corners: left corner x, its slope down to the left, right corner x, its slope
 uniform vec4 u_tach;       // the rev counter's centre x, y, radius, flat cut y (the window ends at its edge and cut)
 uniform vec4 u_econT[16];  // the ticks: x0, y0, x1, y1 (width 0 = none)
-uniform vec4 u_econW[4];   // their widths, four to a vec4
+uniform vec4 u_econW[4];   // their widths, four to a vec4 (negative: a round dot that wide at the segment's middle)
 
 float cov(float d) { return clamp(0.5 - d, 0.0, 1.0); }
 
@@ -1992,7 +1995,8 @@ void main() {
             float len = length(ba);
             vec2 u = ba / max(len, 0.001);
             float along = dot(pa, u), across = abs(pa.x * u.y - pa.y * u.x);
-            float m = cov(max(across - w * 0.5, max(-along, along - len))) * step(0.01, w);
+            float m = w < 0.0 ? cov(length(pa - ba * 0.5) + w * 0.5)
+                              : cov(max(across - w * 0.5, max(-along, along - len))) * step(0.01, w);
             c = mix(c, u_mark, m); al = max(al, m);
         }
     }

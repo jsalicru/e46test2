@@ -355,7 +355,7 @@ const MVIEW_RPM = 8000;            // the M view theme's rev scale: 0..8
 const MVIEW_SPEED = { us: 200, metric: 330 };
 // the E36 shader's colour roles, in u_col order (hud_themes.js e36)
 const E36_ROLES = ['bezel', 'face', 'dial', 'mark', 'needle', 'hub', 'red', 'blue', 'orange', 'well', 'strip', 'bg'];
-const E36_ZONE_COLORS = ['red', 'blue', 'orange', 'yellow', 'unlit'];      // u_zoneB's colour codes
+const E36_ZONE_COLORS = ['red', 'blue', 'orange', 'yellow', 'unlit', 'mark'];      // u_zoneB's colour codes
 const VDASH_RPM = 8000;            // the Vector theme's rev counter: 0..8
 const MEDIA_IF = 'de.bmw.infotainment.hmi.hmimediastate.HmiMediaState';   // the head unit's now playing (front)
 const MEDIA_INST = 'HMI_CID';     // its front screen's instance
@@ -2225,7 +2225,7 @@ class HudApp {
             const R = this._e36Revs(w);
             const T = pad((w.ticks || []).concat(R.ticks), 10, null);    // [dial, first angle, last angle, count, outer r, length, width]
             c.uniform(ref, 'u_tick', flat(T.map((g) => (g ? [g[1], g[2], g[3], g[4]] : [0, 0, 0, 0]))), { type: 'vec4' });
-            c.uniform(ref, 'u_tickB', flat(T.map((g) => (g ? [g[5], g[6], g[0], 0] : [0, 0, -1, 0]))), { type: 'vec4' });
+            c.uniform(ref, 'u_tickB', flat(T.map((g) => (g ? [g[5], g[6], g[0], g[7] ? 1 : 0] : [0, 0, -1, 0]))), { type: 'vec4' });
             const Z = pad((w.zones || []).concat(R.zones), 6, null);    // [dial, from angle, to angle, inner r, outer r, colour, stripes]
             c.uniform(ref, 'u_zone', flat(Z.map((z) => (z ? [z[1], z[2], z[3], z[4]] : [0, 0, 0, 0]))), { type: 'vec4' });
             c.uniform(ref, 'u_zoneB', flat(Z.map((z) => (z ? [z[0], E36_ZONE_COLORS.indexOf(z[5]) + 8 * (z[6] || 0)] : [-1, -1]))), { type: 'vec2' });

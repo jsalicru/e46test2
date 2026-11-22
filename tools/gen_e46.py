@@ -92,12 +92,13 @@ TICKS = [
     [1, mph_ang(10), mph_ang(70), 7, 283, 29, 10],
     [1, mph_ang(80), mph_ang(120), 5, 283, 29, 10],
     [1, mph_ang(130), mph_ang(180), 6, 283, 29, 10],
-    [1, -115.4, 126.6, 17, 267, 7.5, 7.5],                    # the dots between (15 .. 175), as measured
-    [1, kmh_ang(10), kmh_ang(300), 30, 175, 12, 4],           # the inner km/h ring, every 10
+    [1, -115.4, 126.6, 17, 267, 8, 8, 1],                     # the dots between (15 .. 175), as measured (round)
+    [1, kmh_ang(10), kmh_ang(300), 30, 172, 5, 5, 1],         # the inner km/h ring, a dot every 10
     [2, rpm_ang(0), rpm_ang(9), 10, 281, 31, 10],             # 0 .. 9 thousand
-    [2, rpm_ang(0.5), rpm_ang(8.5), 9, 281, 18, 5],           # the halves
-    [0, -23, 23, 3, 172, 22, 6.5],                            # fuel: 1/4 1/2 3/4 (round the low pivot, near the rim)
-    [3, -17, 17, 3, 192, 20, 6.5],                            # coolant
+    [2, rpm_ang(0.5), rpm_ang(8.5), 9, 276, 8, 8, 1],         # the halves: dots
+    [0, -23, 23, 2, 166, 9, 9, 1],                            # fuel: 1/4 and 3/4 dots (round the low pivot, near the rim);
+                                                              # its 1/2 dash is a zone in the print's colour (ZONES)
+    [3, -17, 17, 2, 187, 9, 9, 1],                            # coolant: two dots, no middle mark
 ]
 # [dial, from angle, to angle, inner radius, outer radius, colour(, stripes)]
 ZONES = [
@@ -106,6 +107,7 @@ ZONES = [
     [2, rpm_ang(4.0), rpm_ang(7.0), 260, 276, 'yellow', 6],
     [2, rpm_ang(7.0), rpm_ang(7.5), 260, 276, 'orange', 1],
     [2, rpm_ang(7.5), rpm_ang(9.0), 260, 276, 'red', 3],
+    [0, -1.15, 1.15, 150, 172, 'mark'],                       # the fuel gauge's 1/2 dash (the shader takes 10 tick groups)
     [3, -42, -31, 168, 200, 'blue'],
     [3, 30, 41, 168, 200, 'red'],
 ]
@@ -127,11 +129,11 @@ TEXTS = [
     ('1/min', 'e4_lab', 1315.0, 218.0), ('x1000', 'e4_lab', 1314.0, 250.5),
     ('0', 'e4_gl', 78.5, 428.0), ('1/2', 'e4_gl', 192.5, 364.0), ('1/1', 'e4_gl', 288.5, 429.0),
     ('120', 'e4_oil', 1205.5, 509.5), ('210', 'e4_oil', 1320.5, 483.5), ('300', 'e4_oil', 1432.5, 514.0),
-    ('°F', 'e4_degf', 1383.5, 564.5),
+    ('°F', 'e4_degf', 1402.0, 566.0),
 ]
 # icons by their ink: (name, ink centre x, y, ink height or width ('h' / 'w'), render px); ICON_INK: where each icon's
 # ink lies in its square (shared/icons.js, measured: x0, x1, y0, y1 as fractions)
-ICONS = [('fuel', 200.5, 455.5, 45, 'h'), ('e36cool', 1793.5, 446.0, 52, 'h'), ('e46oil', 1319.0, 530.5, 60, 'w')]
+ICONS = [('fuel', 200.5, 455.5, 45, 'h'), ('e36cool', 1793.5, 446.0, 52, 'h'), ('e46oil', 1228.0, 579.0, 54, 'w')]
 ICON_INK = {'fuel': (0.080, 0.797, 0.220, 0.938), 'e36cool': (0.140, 0.858, 0.040, 0.978), 'e46oil': (0.035, 0.963, 0.247, 0.715)}
 LOGO = ('e36m', 660, 503, 96, 34)
 
@@ -139,7 +141,8 @@ LOGO = ('e36m', 660, 503, 96, 34)
 OIL_PIV = (1320.0, 575.0)
 OIL_ANG = lambda f: -63.0 + 126.0 * (f - 120) / 180.0
 # (F, width, inner and outer end): the end ticks short and out past their figures, as the render has them
-OIL_TICKS = [(120, 4, 156, 170), (165, 5, 118, 137), (210, 6, 118, 137), (255, 5, 118, 137), (300, 4, 156, 170)]
+# a negative width: a round dot that wide at the tick's middle (all but the 210 line)
+OIL_TICKS = [(120, -7, 156, 170), (165, -8, 120, 136), (210, 6, 118, 137), (255, -8, 120, 136), (300, -7, 156, 170)]
 OIL_LEN, OIL_HUB = 132, 36
 
 # windows: the LCD, the top lamp, (none): x, y, w, h, radius, render px
@@ -150,7 +153,8 @@ FACE = {'box': (-30, -10, 2013, 800), 'radius': 60, 'arch': (991, 2240.6, 2232.6
 
 
 def tick(g):
-    return [g[0], round(g[1], 2), round(g[2], 2), g[3], L(g[4]), L(g[5]), L(g[6])]
+    """[dial, first, last, count, outer r, length, width(, 1: round dots)] -> target px"""
+    return [g[0], round(g[1], 2), round(g[2], 2), g[3], L(g[4]), L(g[5]), L(g[6])] + ([1] if len(g) > 7 and g[7] else [])
 
 
 def zone(z):
