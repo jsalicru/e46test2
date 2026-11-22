@@ -1756,25 +1756,26 @@ precision mediump float;
 varying vec2 v_uv;
 uniform vec2 u_size;
 uniform vec2 u_origin;
-uniform vec3 u_col[15];    // bezel, face, dial, mark, needle, hub, red, blue, orange, well, strip, bg, yellow, lamp, unlit
+uniform vec3 u_col[12];    // bezel, face, dial, mark, needle, hub, red, blue, orange, well, strip, bg (yellow: from orange)
 uniform vec4 u_face;       // the face's box: x0, y0, x1, y1
 uniform vec4 u_faceB;      // its corner radius, the arch's centre x, y and radius
 uniform float u_bezel;     // the black bezel round the face, px
 uniform vec4 u_dial[4];    // fuel, speed, revs, coolant: centre x, y, radius, flat cut y below (0 = none)
-uniform vec2 u_piv[4];     // their needles' pivots (the ticks and zones turn round them)
+uniform vec4 u_piv[4];     // their needles' pivots (the ticks and zones turn round them); z, w: the dial's foot under its
+                           // cut (E46): the flat's half width (0 none), the shoulders' slope (0: the circle widened down
+                           // to the flat, the hull; else the circle cut flat with sloped shoulders)
 uniform vec4 u_tick[10];   // tick groups: first angle, last angle, count (0 = none), outer radius
 uniform vec4 u_tickB[10];  // length, width, dial index (they turn round its pivot), (unused)
-uniform vec4 u_zone[8];    // zones: from angle, to angle, inner radius, outer radius
-uniform vec2 u_zoneB[8];   // dial index (round its pivot); colour 0 red, 1 blue, 2 orange, 3 yellow, 4 unlit (-1 none) + 8 x stripes
+uniform vec4 u_zone[6];    // zones: from angle, to angle, inner radius, outer radius
+uniform vec2 u_zoneB[6];   // dial index (round its pivot); colour 0 red, 1 blue, 2 orange, 3 yellow, 4 an unlit lamp (-1 none)
+                           // + 8 x stripes
 uniform vec4 u_win[3];     // windows (LCD, top lamp, ASC or the M3's /M plate): x, y, w, h (w 0 = none)
 uniform vec3 u_winR;       // their corner radii
 uniform float u_light;     // daylight: 1 by day, 0 at night (the glass's glare goes, the depth stays)
 uniform vec4 u_strip[3];   // the warning-light strips: x, y, w, h (w 0 = none)
 uniform float u_stripR;    // their corner radius
-uniform float u_chrome;    // a chrome ring round every dial, px wide (0 = none: the E36's plain rim)
-uniform vec4 u_foot[4];    // each dial's foot, with its cut: the flat's half width, the shoulders' slope, mode (0 square cut,
-                           // 1 the circle cut with sloped shoulders, 2 the circle widened down to a wider flat: the hull)
-uniform float u_pill;      // striped zones as lamps: rounded, the lit ones glowing (the E46 M3's warm-up lights; 0 = flat stripes)
+uniform vec2 u_e46;        // the E46's extras (0, 0 for the E36): a chrome ring round every dial, px wide; striped zones as
+                           // lamps (1: rounded, the lit ones glowing), and then the lamp windows black, not the LCD's colour
 
 float cov(float d) { return clamp(0.5 - d, 0.0, 1.0); }
 vec3 put(vec3 c, vec3 col, float a) { return mix(c, col, clamp(a, 0.0, 1.0)); }
@@ -1813,8 +1814,10 @@ void main() {
     for (int i = 0; i < 4; i++) {
         vec4 g = u_dial[i];
         float gd = length(p - g.xy) - g.z;
-        if (gd > 9.0 + u_chrome + (u_foot[i].z > 1.5 ? 40.0 : 0.0) || gd > best) continue;
-        best = gd; K = float(i); V = u_piv[i]; G = g; FT = u_foot[i];
+        if (gd > 9.0 + u_e46.x + (u_piv[i].z > 0.0 ? 40.0 : 0.0) || gd > best) continue;
+        vec4 pv = u_piv[i];
+        best = gd; K = float(i); V = pv.xy; G = g;
+        FT = vec4(pv.z, pv.w, pv.z <= 0.0 ? 0.0 : pv.w > 0.0 ? 1.0 : 2.0, 0.0);
     }
     if (K >= 0.0) {
         float dc = length(p - G.xy) - G.z;
@@ -1841,11 +1844,11 @@ void main() {
         float low = clamp((p.y - G.y) / G.z * 0.7 + 0.5, 0.0, 1.0);
         float edge = max(dc, cut);
         c = put(c, mix(BEZEL * 0.5, FACE * 0.9, low * low), cov(edge - 4.0));
-        if (u_chrome > 0.0) {
+        if (u_e46.x > 0.0) {
             // a polished ring just outside the rim: bright along its middle, lit from above
-            float t = clamp((edge - 3.0) / u_chrome, 0.0, 1.0);
+            float t = clamp((edge - 3.0) / u_e46.x, 0.0, 1.0);
             float sheen = 1.0 - abs(2.0 * t - 1.0);
-            c = put(c, vec3(0.93, 0.93, 0.95) * (0.38 + 0.62 * sqrt(sheen)) * (0.78 + 0.22 * low), cov(abs(edge - 3.0 - u_chrome * 0.5) - u_chrome * 0.5));
+            c = put(c, vec3(0.93, 0.93, 0.95) * (0.38 + 0.62 * sqrt(sheen)) * (0.78 + 0.22 * low), cov(abs(edge - 3.0 - u_e46.x * 0.5) - u_e46.x * 0.5));
         }
         float inDial = cov(edge);
         c = put(c, u_col[2] + 0.03 * (1.0 - smoothstep(0.0, G.z, length(p - G.xy - vec2(0.0, G.z * 0.3)))), inDial);
@@ -1859,16 +1862,26 @@ void main() {
         vec2 d = p - V;
         float r = length(d), a = degrees(atan(d.x, -d.y));
 
-        // the zones (the red rev zone and its stripes, the fuel and coolant blocks)
-        for (int i = 0; i < 8; i++) {
-            vec2 b = u_zoneB[i];
-            if (b.x != K || b.y < 0.0) continue;
-            vec4 z = u_zone[i];
-            float dd = max(radians(max(z.x - a, a - z.y)) * r, max(z.z - r, r - z.w));
+        // the zones (the red rev zone and its stripes or lamps, the fuel and coolant blocks): the loop only finds the one
+        // this pixel belongs to (the nearest; of equal ones the later, so a lit lamp covers the unlit one under it), then
+        // it is drawn once
+        float zd = 1e5;
+        vec4 z = vec4(0.0);
+        vec2 b = vec2(-1.0);
+        for (int i = 0; i < 6; i++) {
+            vec2 bi = u_zoneB[i];
+            if (bi.x != K || bi.y < 0.0) continue;
+            vec4 zi = u_zone[i];
+            float di = max(radians(max(zi.x - a, a - zi.y)) * r, max(zi.z - r, r - zi.w));
+            if (di < 10.0 && di <= zd + 0.001) { zd = di; z = zi; b = bi; }
+        }
+        if (b.y >= 0.0) {
+            float dd = zd;
             float n = floor(b.y / 8.0), k = b.y - n * 8.0;
-            vec3 zc = k < 0.5 ? u_col[6] : k < 1.5 ? u_col[7] : k < 2.5 ? u_col[8] : k < 3.5 ? u_col[12] : u_col[14];
-            if (n > 0.0 && u_pill > 0.5) {
-                // a lamp in the middle of each of the n steps: a capsule along the arc, 55 % of a step long
+            vec3 zc = k < 0.5 ? u_col[6] : k < 1.5 ? u_col[7] : k < 2.5 ? u_col[8]
+                : k < 3.5 ? vec3(u_col[8].r, min(1.0, u_col[8].g * 1.37), u_col[8].b) : mix(u_col[2], MARK, 0.22);
+            if (n > 0.0 && u_e46.y > 0.5) {
+                // a lamp in the middle of each of the n steps: a capsule along the arc, 40 % of a step long
                 float st = (z.y - z.x) / n;
                 float ac = z.x + st * (floor(clamp((a - z.x) / st, 0.0, n - 0.001)) + 0.5);
                 float hw = (z.w - z.z) * 0.5;
@@ -1906,7 +1919,7 @@ void main() {
         // sunk like the dials: the frame dark at the top, lit at the bottom, the top edge's shade inside
         float low = clamp((p.y - u_win[i].y) / max(u_win[i].w, 1.0), 0.0, 1.0);
         c = put(c, mix(BEZEL * 0.6, FACE * 0.9, low), cov(d - 2.0) * on);
-        c = put(c, (i == 0 ? u_col[9] : u_col[13]) * (1.0 - 0.5 * smoothstep(-10.0, 2.0, boxd(p - vec2(0.0, 7.0), u_win[i], rad))), cov(d) * on);
+        c = put(c, (i == 0 || u_e46.y < 0.5 ? u_col[9] : BEZEL * 2.0) * (1.0 - 0.5 * smoothstep(-10.0, 2.0, boxd(p - vec2(0.0, 7.0), u_win[i], rad))), cov(d) * on);
     }
 
     // the cluster is lit from the middle: its ends fall off a little

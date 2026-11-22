@@ -78,10 +78,10 @@ ZONES = [
     [2, rpm_ang(7.5), rpm_ang(9.0) + 1.0, 248, 281, 'red'],
     # the E46 M3's warm-up lamps: one at each quarter between the ticks (2750 .. 7250), lit from 3750 to 5750 (the first
     # orange, the rest yellow) as the render shows them; drawn as lamps ("pill") with a glow
-    [2, rpm_ang(2.5), rpm_ang(3.5), 256, 272, 'unlit', 2],
+    # (the shader takes 6 zones: one unlit row of all ten, the lit ones drawn over it)
+    [2, rpm_ang(2.5), rpm_ang(7.5), 256, 272, 'unlit', 10],
     [2, rpm_ang(3.5), rpm_ang(4.0), 256, 272, 'orange', 1],
     [2, rpm_ang(4.0), rpm_ang(6.0), 256, 272, 'yellow', 4],
-    [2, rpm_ang(6.0), rpm_ang(7.5), 256, 272, 'unlit', 3],
     [3, -42, -31, 168, 200, 'blue'],
     [3, 30, 41, 168, 200, 'red'],
 ]
