@@ -315,6 +315,7 @@ const TICK_MS = 50;              // 20 Hz: shift bar and gauges
 const NEEDLE_W = 28;             // 1/s: a steady sweep trails the value by 2 / 28 s (71 ms)
 const PATH_KEEP = 0.06;          // s
 const PATH_AHEAD = 0.07;         // s: then on to where the needle will be by then
+const PATH_TAIL = 0.2;           // s: the E46's paths then on to the needle's target (a late tick doesn't freeze it)
 function mono() { const t = process.hrtime(); return t[0] * 1000 + t[1] / 1e6; }
 const TEXT_MS = 200;             // text re-draws at most 5 times a second (what BMW's own readouts do)
 const TARGET_SIZES = { hud: [800, 480], panel: [1920, 720] };
@@ -2876,7 +2877,10 @@ class HudApp {
             // Each follows its angle with inertia (e36.Needle), the rev needle from the unfiltered rpm: the follower is
             // its only smoothing. Sent as paths in the renderer's clock (see NEEDLE_W): t0 from when the layer showed
             const sp = this._raw('speed'), R = this._e36Revs(w);
-            const val = (sig) => (sig === 'speed' ? (isNum(sp) && w.mph ? sp * 0.621371 : sp) : sig === 'rpm' ? this._rpmIn(now) : this._raw(sig));
+            // the E46 ("look46"): the revs carried on between the car's samples (e36.Extrap), so the needle doesn't wait for each
+            if (w.look46 && !x.rpmX) x.rpmX = new e36.Extrap();
+            const rpmNow = () => (w.look46 ? x.rpmX.at(this._rpmIn(now), now) : this._rpmIn(now));
+            const val = (sig) => (sig === 'speed' ? (isNum(sp) && w.mph ? sp * 0.621371 : sp) : sig === 'rpm' ? rpmNow() : this._raw(sig));
             const tm = mono();
             if (!isNum(x.t0)) x.t0 = tm;
             const ts = (tm - x.t0) / 1000;
@@ -2891,6 +2895,16 @@ class HudApp {
                 // "pathAhead" (s, gen_e46.py): plan further ahead, so a late tick (the head unit busy) doesn't run the path out
                 // and the needle doesn't stop and jump; the next tick replans it anyway
                 const ah = isNum(w.pathAhead) ? w.pathAhead : PATH_AHEAD;
+                // the E46: a path that ends where the needle is heading, never short of it (e36.nextPathTo): for the revs the
+                // reckoned revs by the path's end, so a late tick doesn't park the needle mid-sweep
+                if (w.look46) {
+                    let fin = to;
+                    if (d && d.signal === 'rpm' && x.rpmX) {
+                        const fa = e36.frac(x.rpmX.peek(now + (PATH_KEEP + ah + PATH_TAIL) * 1000), i === R.dial && R.map ? R.map : d.map);
+                        if (fa !== null) fin = fa;
+                    }
+                    return e36.nextPathTo(x.path && x.path[i], ts, PATH_KEEP, ah, x.ndl[i].ahead(to, (PATH_KEEP + ah) * 1000), fin, PATH_TAIL);
+                }
                 return e36.nextPath(x.path && x.path[i], ts, PATH_KEEP, ah, x.ndl[i].ahead(to, (PATH_KEEP + ah) * 1000));
             });
             // the economy needle: the M3's oil temperature (its scale in F on the mph face), or the economy estimated
