@@ -28,8 +28,9 @@ from gen_e36 import W, H, font, ink, digit_ink  # noqa: E402
 
 # BMW's own items in its bottom row that must stay uncovered (x0, x1; the dash's pieces skip them), or BMW draws black
 # boxes over the theme. On the G80 M3 (car photos, Nov 22 2026) the drive mode (MDM) from 1214, then the gear number,
-# the letter and the shift programme's three lines, together about 1380 .. 1510; the electric range's slot as on the E36.
-HOLES = [(1214, 1525), (1680, 1880)]
+# the letter and the shift programme's three lines, together about 1380 .. 1510. No slot for the electric range (the
+# E36's second hole): on the M3 only BMW's outside temperature showed through it, and the LCD has that.
+HOLES = [(1214, 1525)]
 
 # the render -> the cluster
 S = 0.943
@@ -49,6 +50,11 @@ GAP = 3
 # needles' pivot (circles fitted to the render's tick marks)
 SPD = {'c': (657.4, 347.9), 'r': 290, 'cut': 607, 'pivot': (662.2, 358.2)}
 TACH = {'c': (1313.3, 350.0), 'r': 290, 'cut': 607, 'pivot': (1314.8, 360.4)}
+# the coolant needle's scale, in F (the car sends C): it sits on the blue block until 100 F, then rises
+# to the first dot at 160, the middle at 215, the second dot at 235 and the red block at 240
+F2C = lambda f: round((f - 32) * 5 / 9, 2)
+COOL_MAP = [(F2C(32), -40), (F2C(100), -40), (F2C(160), -17), (F2C(215), 0), (F2C(235), 17), (F2C(240), 35.5), (F2C(260), 45)]
+
 # the warm-up lamps: all lit below WARM[0] F oil, one by one out as it climbs, all out at WARM[1]; WARM[2] lamps
 WARM = (100, 160, 6)
 # the shift lights: from SHIFT[0] rpm the yellow lamps light from the top down (the one after 6500 first, the one after
@@ -132,7 +138,7 @@ TEXTS = [
     ('1/min', 'e4_lab', 1315.0, 218.0), ('x1000', 'e4_lab', 1314.0, 250.5),
     ('0', 'e4_gl', 78.5, 428.0), ('1/2', 'e4_gl', 192.5, 364.0), ('1/1', 'e4_gl', 288.5, 429.0),
     ('120', 'e4_oil', 1205.5, 509.5), ('210', 'e4_oil', 1320.5, 483.5), ('300', 'e4_oil', 1432.5, 514.0),
-    ('°F', 'e4_degf', 1402.0, 566.0),
+    ('°F', 'e4_degf', 1402.0, 579.0),           # level with the oil can (its ink centre)
 ]
 # icons by their ink: (name, ink centre x, y, ink height or width ('h' / 'w'), render px); ICON_INK: where each icon's
 # ink lies in its square (shared/icons.js, measured: x0, x1, y0, y1 as fractions)
@@ -183,7 +189,7 @@ def layout():
         (SPD, 'speed', SPD['pivot'], 250, 13, 46, -21, MPH_TABLE + [(200, mph_ang(180) + 4)], mph_ang(0) - 3),
         (TACH, 'rpm', TACH['pivot'], 250, 13, 46, -21, [(0, rpm_ang(0)), (9000, rpm_ang(9)), (9600, rpm_ang(9) + 4)], rpm_ang(0) - 3),
         (COOL, 'coolant', COOL['pivot'], 165, 11, 42, 0,
-         [(40, -47), (50, -36.5), (80, -12), (85, 0), (105, 0), (115, 18), (120, 35.5), (130, 45)], -47),
+         COOL_MAP, -47),
     ]
     for d, sig, piv, nl, nw, hub, tail, mp, rest in spec:
         cut = T(0, d['cut'])[1] if d.get('cut') else 0
