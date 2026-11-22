@@ -2888,7 +2888,10 @@ class HudApp {
                 const a = d ? e36.frac(val(d.signal), i === R.dial && R.map ? R.map : d.map) : 0;
                 const to = d ? (a === null ? d.rest : a) : 0;
                 x.ndl[i].step(to, now);
-                return e36.nextPath(x.path && x.path[i], ts, PATH_KEEP, PATH_AHEAD, x.ndl[i].ahead(to, (PATH_KEEP + PATH_AHEAD) * 1000));
+                // "pathAhead" (s, gen_e46.py): plan further ahead, so a late tick (the head unit busy) doesn't run the path out
+                // and the needle doesn't stop and jump; the next tick replans it anyway
+                const ah = isNum(w.pathAhead) ? w.pathAhead : PATH_AHEAD;
+                return e36.nextPath(x.path && x.path[i], ts, PATH_KEEP, ah, x.ndl[i].ahead(to, (PATH_KEEP + ah) * 1000));
             });
             // the economy needle: the M3's oil temperature (its scale in F on the mph face), or the economy estimated
             // from the engine's power (shared/e36.js): the car has no fuel-flow signal

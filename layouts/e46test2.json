@@ -1924,6 +1924,7 @@
         }
       ],
       "look46": true,
+      "pathAhead": 0.25,
       "econ": {
         "signal": "oil",
         "pivot": [
