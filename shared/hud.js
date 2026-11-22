@@ -354,8 +354,8 @@ const TILE_MAX = 14;       // half a flash: red, then the normal colour
 const MVIEW_RPM = 8000;            // the M view theme's rev scale: 0..8
 const MVIEW_SPEED = { us: 200, metric: 330 };
 // the E36 shader's colour roles, in u_col order (hud_themes.js e36)
-const E36_ROLES = ['bezel', 'face', 'dial', 'mark', 'needle', 'hub', 'red', 'blue', 'orange', 'well', 'strip', 'bg'];
-const E36_ZONE_COLORS = ['red', 'blue', 'orange'];      // u_zoneB's colour codes
+const E36_ROLES = ['bezel', 'face', 'dial', 'mark', 'needle', 'hub', 'red', 'blue', 'orange', 'well', 'strip', 'bg', 'yellow', 'lamp'];
+const E36_ZONE_COLORS = ['red', 'blue', 'orange', 'yellow'];      // u_zoneB's colour codes
 const VDASH_RPM = 8000;            // the Vector theme's rev counter: 0..8
 const MEDIA_IF = 'de.bmw.infotainment.hmi.hmimediastate.HmiMediaState';   // the head unit's now playing (front)
 const MEDIA_INST = 'HMI_CID';     // its front screen's instance
@@ -2213,7 +2213,10 @@ class HudApp {
             c.uniform(ref, 'u_size', [w.w, w.h]);
             c.uniform(ref, 'u_origin', [w.x, w.y]);
             // "needleColor": another role for the needles (the M3 face's red ones)
-            c.uniform(ref, 'u_col', flat(E36_ROLES.map((r) => rgb(color(t, r === 'needle' && w.needleColor ? w.needleColor : r)))), { type: 'vec3' });
+            // "lamp": the top lamp's and the badge's windows (the LCD's "well" where a theme has none)
+            c.uniform(ref, 'u_col', flat(E36_ROLES.map((r) => rgb(color(t, r === 'needle' && w.needleColor ? w.needleColor : r === 'lamp' && !t.lamp ? 'well' : r)))), { type: 'vec3' });
+            c.uniform(ref, 'u_chrome', [w.chrome || 0]);
+            c.uniform(ref, 'u_cutK', w.cutK || [0, 0]);
             c.uniform(ref, 'u_face', F.box);
             c.uniform(ref, 'u_faceB', [F.radius, F.arch[0], F.arch[1], F.arch[2]]);
             c.uniform(ref, 'u_bezel', [F.bezel || 0]);
@@ -2240,7 +2243,7 @@ class HudApp {
             c.uniform(ref, 'u_size', [w.w, w.h]);
             c.uniform(ref, 'u_origin', [w.x, w.y]);
             c.uniform(ref, 'u_mark', rgb(color(t, 'mark')));
-            c.uniform(ref, 'u_line', rgb(color(t, 'face')));
+            c.uniform(ref, 'u_line', rgb(color(t, w.lineColor || 'face')));
             c.uniform(ref, 'u_econ', [0, 0, 0, E.top]);
             c.uniform(ref, 'u_cham', ch);
             c.uniform(ref, 'u_tach', [T[0], T[1], T[2], T[3] || 1e5]);
@@ -2260,6 +2263,7 @@ class HudApp {
             c.uniform(ref, 'u_cham', (E && E.cham) || [-1e5, 0, 1e5, 0]);
             c.uniform(ref, 'u_tach', T ? [T[0], T[1], T[2], T[3] || 1e5] : [0, 0, 0, 0]);
             c.uniform(ref, 'u_light', [this.nightOn ? 0 : 1]);     // softer needle shadows at night
+            c.uniform(ref, 'u_econH', [(E && E.hub) || 0]);
             x.econ = new e36.Smooth(1000);
         } else if (w.type === 'vdash') {
             // the bracket lines (target px): [x0, y0, x1, y1, width, brightness 0..1]
