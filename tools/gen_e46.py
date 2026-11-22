@@ -55,6 +55,10 @@ TACH = {'c': (1313.3, 350.0), 'r': 290, 'cut': 607, 'pivot': (1314.8, 360.4)}
 F2C = lambda f: round((f - 32) * 5 / 9, 2)
 COOL_MAP = [(F2C(32), -40), (F2C(100), -40), (F2C(160), -17), (F2C(215), 0), (F2C(235), 17), (F2C(240), 35.5), (F2C(260), 45)]
 
+# each needle's response (1/s, hud.js e36.Needle: it settles in about 4 / resp seconds): the revs quick, the speed a
+# little softer, fuel and coolant slow like the real gauges; all glide between the car's samples
+RESP = {'rpm': 16, 'speed': 10, 'fuel': 2.5, 'coolant': 3}
+
 # the warm-up lamps: all lit below WARM[0] F oil, one by one out as it climbs, all out at WARM[1]; WARM[2] lamps
 WARM = (100, 160, 6)
 # the shift lights: from SHIFT[0] rpm the yellow lamps light from the top down (the one after 6500 first, the one after
@@ -197,7 +201,7 @@ def layout():
         dials.append({'c': list(T(*d['c'])), 'r': L(d['r']), 'cut': cut, 'pivot': list(T(*piv)),
                       'foot': [L(ft[0]), ft[1], ft[2]]})
         needles.append({'signal': sig, 'pivot': list(T(*piv)), 'hub': L(hub), 'tail': L(tail), 'needle': [L(nl), L(nw)],
-                        'map': [[v, round(a, 2)] for v, a in mp], 'rest': round(rest, 2)})
+                        'map': [[v, round(a, 2)] for v, a in mp], 'rest': round(rest, 2), 'resp': RESP[sig]})
 
     dash = {
         'id': 'dash', 'type': 'e36dash', 'class': 'content', 'z': 0, 'x': 0, 'y': 0, 'w': W, 'h': TOP, 'mph': True,

@@ -2807,7 +2807,8 @@ class HudApp {
             // "to" (lit without oil data). Shift: from shift[0] rpm they light again from the top down, one more each
             // (shift[1] - shift[0]) / lamps, the lowest last; past shift[2] every lamp blinks. A lamp is lit if either
             // lights it. The shader takes how many yellow lamps are out from the lowest, or -1 for all out.
-            const oil = this._raw('oil'), rpm = this._rpmIn(now);
+            // the revs through the tach's own 120 ms filter (_smoothRpm), so a lamp doesn't flicker at its threshold
+            const oil = this._raw('oil'), rpm = isNum(this.rpmF) ? this.rpmF : this._rpmIn(now);
             const [lo, hi, n] = w.warm, sh = w.shift;
             const f = isNum(oil) ? oil * 9 / 5 + 32 : null;
             const warmOut = f === null ? 0 : Math.max(0, Math.min(n, Math.floor((f - lo) / (hi - lo) * n)));
@@ -2879,7 +2880,9 @@ class HudApp {
             const tm = mono();
             if (!isNum(x.t0)) x.t0 = tm;
             const ts = (tm - x.t0) / 1000;
-            if (!x.ndl) { x.ndl = [0, 1, 2, 3].map(() => new e36.Needle(NEEDLE_W)); x.path = null; }
+            // each dial's needle its own response ("resp", 1/s; gen_e46.py): softer than the E36's NEEDLE_W, so it glides
+            // between the car's samples instead of stepping to each one
+            if (!x.ndl) { x.ndl = [0, 1, 2, 3].map((i) => new e36.Needle(((w.dials || [])[i] || {}).resp || NEEDLE_W)); x.path = null; }
             const paths = [0, 1, 2, 3].map((i) => {
                 const d = (w.dials || [])[i];
                 const a = d ? e36.frac(val(d.signal), i === R.dial && R.map ? R.map : d.map) : 0;
