@@ -103,9 +103,8 @@ RPM_AT = {0: (1117.0, 450.0), 1: (1086.5, 362.0), 2: (1117.5, 268.0), 3: (1173.5
 KM_R = 137          # the inner km/h figures' ink centres from the pivot (the render's, 130 .. 142); on the true scale
 FIGURES = ([('fs_%d' % v, str(v), 'e4_big') + MPH_AT[v] for v in range(0, 181, 20)]
            + [('ft_%d' % k, str(k), 'e4_rpm') + RPM_AT[k] for k in range(10)]
-           # the render leaves out 180 on the inner ring (its tick stays): it gives the top figures room
            + [('fk_%d' % v, str(v), 'e4_km', SPD['c'][0] + KM_R * math.sin(math.radians(kmh_ang(v))),
-               SPD['c'][1] - KM_R * math.cos(math.radians(kmh_ang(v)))) for v in range(20, 301, 20) if v != 180])
+               SPD['c'][1] - KM_R * math.cos(math.radians(kmh_ang(v)))) for v in range(20, 301, 20)])
 TEXTS = [
     ('km/h', 'e4_sm', 665.0, 450.5), ('MPH', 'e4_mph', 662.0, 555.5),
     ('1/min', 'e4_lab', 1315.0, 218.0), ('x1000', 'e4_lab', 1314.0, 250.5),

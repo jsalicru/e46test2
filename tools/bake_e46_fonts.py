@@ -28,7 +28,7 @@ S = 0.943          # render px -> cluster px (tools/gen_e46.py S)
 
 # name, file, characters, sample, its ink height and width in the render (render px)
 FIT = [
-    ('e4_big', SEMI, D, '100', 38, 67),                  # the MPH figures
+    ('e4_big', SEMI, D, '100', 35, 62),                  # the MPH figures (a touch under the render's 38 x 67: on the car they read large)
     ('e4_rpm', SEMI, D, '4', 40, 26),                    # the rev counter's 0 .. 9
     ('e4_km', SEMI, D, '260', 20, 38),                   # the inner km/h ring
     ('e4_mph', SEMI, 'MPH', 'MPH', 25, 64),              # MPH under the badge: spaced out
