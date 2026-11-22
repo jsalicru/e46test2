@@ -2026,6 +2026,8 @@ uniform vec4 u_cham;       // the window's top corners: left corner x, its slope
 uniform vec4 u_tach;       // the rev counter's centre x, y, radius, flat cut y (the window ends at its edge and cut)
 uniform float u_light;     // daylight: 1 by day, 0 at night (softer shadows)
 uniform float u_econH;     // the economy (oil) needle's hub radius, cut off with the window (0 = none: the E36's)
+uniform float u_e46n;      // 1: the E46 M3's look (gen_e46.py): glowing needles with a bright core, hubs a black rim round a
+                           // domed cap, the big dials' hubs with their square tab (u_piv.w < 0: its size); 0: the E36's
 
 float cov(float d) { return clamp(0.5 - d, 0.0, 1.0); }
 vec2 dir(float a) { float r = radians(a); return vec2(sin(r), -cos(r)); }
@@ -2041,11 +2043,15 @@ float ang(vec4 T, vec4 A) {
 }
 // a fixed noise per pixel (no sin: it loses precision at screen coordinates)
 float hash(vec2 p) { vec3 q = fract(p.xyx * 0.1031); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); }
+// the E46's needle colour: a bright core, deeper red at the edges (x: 0 the middle, 1 the edge)
+vec3 glowc(vec3 n, float x) { return mix(min(n * vec3(1.0, 1.3, 1.6) + vec3(0.0, 0.03, 0.01), vec3(1.0)), n * vec3(0.92, 0.38, 0.3), x * x); }
+// a domed cap: lit from the upper left
+vec3 dome(vec3 h, vec2 d, float r) { return h * (1.0 + 1.1 * clamp(0.6 - length(d / r + vec2(0.35, 0.45)), 0.0, 1.0)); }
 // a dial's needle at d from its pivot, pointing u: the distances to its counterweight, its bar (tapered) and its hub
 vec3 parts(vec2 d, vec2 u, vec4 V, vec2 N) {
     float t = dot(d, u), side = abs(d.x * u.y - d.y * u.x);
     float wt = mix(N.y, N.y * 0.55, clamp(t / N.x, 0.0, 1.0)) * 0.5;
-    return vec3(max(side - N.y * 1.1, max(t, -t - V.w)), max(side - wt, max(-t, t - N.x)), length(d) - V.z);
+    return vec3(max(side - N.y * 1.1, max(t, -t - max(V.w, 0.0))), max(side - wt, max(-t, t - N.x)), length(d) - V.z);
 }
 
 void main() {
@@ -2062,11 +2068,20 @@ void main() {
         vec2 ed = p - u_econ.xy;
         vec2 u = dir(u_econB.x);
         float t = dot(ed, u), side = abs(ed.x * u.y - ed.y * u.x);
-        float n = cov(max(side - u_econB.y * 0.5, max(-t, t - u_econ.z))) * inWin;
-        c = mix(c, u_col[0], n); al = max(al, n);
+        float nd = max(side - u_econB.y * 0.5, max(-t, t - u_econ.z));
+        float n = cov(nd) * inWin;
+        vec3 nc = u_e46n > 0.5 ? glowc(u_col[0], clamp(side / (u_econB.y * 0.5), 0.0, 1.0)) : u_col[0];
+        if (u_e46n > 0.5) { float g = 0.4 * exp(-max(nd, 0.0) / 4.0) * inWin; c = mix(c, u_col[0], g * (1.0 - al)); al = max(al, g); }
+        c = mix(c, nc, n); al = max(al, n);
         if (u_econH > 0.0) {
-            float hb = cov(max(length(ed) - u_econH, p.y - u_tach.w + 1.0));
-            c = mix(c, u_col[1], hb); al = max(al, hb);
+            float under = p.y - u_tach.w + 1.0;
+            float hb = cov(max(length(ed) - u_econH, under));
+            vec3 hc = u_e46n > 0.5 ? u_col[2] : u_col[1];
+            c = mix(c, hc, hb); al = max(al, hb);
+            if (u_e46n > 0.5) {
+                float hi = cov(max(length(ed) - u_econH * 0.82, under + 2.0));
+                c = mix(c, dome(u_col[1], ed, u_econH), hi);
+            }
         }
     }
 
@@ -2092,9 +2107,24 @@ void main() {
         // plastic, as on the car
         vec3 q = parts(d, u, V, N);
         vec3 cap = u_col[1] * (1.0 + 0.3 * (hash(p) * 0.6 + hash(floor(p * 0.5)) * 0.4 - 0.5));
+        bool e46 = u_e46n > 0.5;
+        vec3 ndc = u_col[0];
+        if (e46) {
+            // the big hubs' square tab at 45 degrees (in the rim's black), and the needle's glow and bright core
+            if (V.w < 0.0) {
+                vec2 tc = d - dir(45.0) * V.z * 0.93;
+                q.x = max(abs(dot(tc, dir(45.0))), abs(dot(tc, dir(135.0)))) + V.w * 0.5;
+            }
+            float t = dot(d, u), side = abs(d.x * u.y - d.y * u.x);
+            float wt = mix(N.y, N.y * 0.55, clamp(t / N.x, 0.0, 1.0)) * 0.5;
+            ndc = glowc(u_col[0], clamp(side / max(wt, 0.5), 0.0, 1.0));
+            float g = 0.45 * exp(-max(q.y, 0.0) / 5.0) * (1.0 - cov(q.y));
+            o = g + al * (1.0 - g);
+            c = (u_col[0] * g + c * al * (1.0 - g)) / max(o, 0.0001); al = o;
+        }
         for (int j = 0; j < 4; j++) {
-            m = cov(j == 0 ? q.x : j == 1 ? q.y : j == 2 ? q.z - 1.5 : q.z);
-            vec3 col = j == 0 ? cap : j == 1 ? u_col[0] : j == 2 ? u_col[2] : cap;
+            m = cov(j == 0 ? q.x : j == 1 ? q.y : j == 2 ? (e46 ? q.z : q.z - 1.5) : (e46 ? q.z + V.z * 0.17 : q.z));
+            vec3 col = j == 0 ? (e46 ? cap * 1.5 : cap) : j == 1 ? ndc : j == 2 ? u_col[2] : (e46 ? dome(cap, d, V.z * 0.83) : cap);
             o = m + al * (1.0 - m);
             c = (col * m + c * al * (1.0 - m)) / max(o, 0.0001); al = o;
         }

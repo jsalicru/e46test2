@@ -45,8 +45,10 @@ CHROME = 8.0                   # the rings, target px
 GAP = 3
 
 # --- the dials (render px): centre, the dial face's radius, the flat cut, the pivot -----------------------------------
-SPD = {'c': (657.4, 347.9), 'r': 290, 'cut': 607}
-TACH = {'c': (1313.3, 350.0), 'r': 290, 'cut': 607}
+# the big dials: their face (the chrome ring's circle) and, a little lower, the centre their ticks are drawn round: the
+# needles' pivot (circles fitted to the render's tick marks)
+SPD = {'c': (657.4, 347.9), 'r': 290, 'cut': 607, 'pivot': (662.2, 358.2)}
+TACH = {'c': (1313.3, 350.0), 'r': 290, 'cut': 607, 'pivot': (1314.8, 360.4)}
 # the warm-up lamps: all lit below WARM[0] F oil, one by one out as it climbs, all out at WARM[1]; WARM[2] lamps
 WARM = (100, 160, 6)
 
@@ -59,26 +61,41 @@ FUEL = {'c': (189.6, 470.0), 'r': 155, 'cut': 609, 'pivot': (189.6, 560.0)}
 COOL = {'c': (1793.5, 470.0), 'r': 155, 'cut': 609, 'pivot': (1793.5, 560.0)}
 
 
+# The scales, measured off the render's ticks round the pivots. The MPH scale is not even: 0 sits 9 degrees under 10,
+# then about 15 a step (80 and 90 under the figures, between their neighbours).
+MPH_TABLE = [(0, -132.4), (10, -123.2), (20, -107.5), (30, -92.6), (40, -78.6), (50, -64.6), (60, -49.7), (70, -34.2),
+             (80, -19.4), (90, -4.3), (100, 10.7), (110, 26.0), (120, 42.1), (130, 58.7), (140, 73.5), (150, 88.6),
+             (160, 103.4), (170, 119.0), (180, 133.1)]
+
+
 def mph_ang(v):
-    return -133.0 + 264.0 * v / 180.0
+    for (a, x), (b, y) in zip(MPH_TABLE, MPH_TABLE[1:]):
+        if v <= b:
+            return x + (y - x) * (v - a) / (b - a)
+    return MPH_TABLE[-1][1]
 
 
 def kmh_ang(v):
-    return mph_ang(v * 0.621371)
+    """The inner km/h ring: its own even scale in the render, a tick every 10 from 10 (-128.7) to 300 (132.6)."""
+    return -128.7 + (v - 10) * 261.3 / 290
 
 
 def rpm_ang(k):
-    """k in thousands"""
-    return -117.5 + 235.0 * k / 9.0
+    """k in thousands: 0 at -118.2, 9 at 119.1, even"""
+    return -118.2 + 237.3 * k / 9.0
 
 
 # [dial, first angle, last angle, count, outer radius, length, width] (render px)
 TICKS = [
-    [1, mph_ang(0), mph_ang(180), 19, 279, 34, 10],          # 0 .. 180 MPH every 10
-    [1, mph_ang(5), mph_ang(175), 18, 265, 7.5, 7.5],         # the dots between
-    [1, kmh_ang(20), kmh_ang(300), 15, 178, 12, 4],           # the inner km/h ring, every 20
-    [2, rpm_ang(0), rpm_ang(9), 10, 279, 34, 10],             # 0 .. 9 thousand
-    [2, rpm_ang(0.5), rpm_ang(8.5), 9, 279, 20, 5],           # the halves
+    # the MPH ticks in four even runs, as the render's uneven scale (the shader spaces each group evenly; 10 groups in all)
+    [1, mph_ang(0), mph_ang(0), 1, 283, 29, 10],
+    [1, mph_ang(10), mph_ang(70), 7, 283, 29, 10],
+    [1, mph_ang(80), mph_ang(120), 5, 283, 29, 10],
+    [1, mph_ang(130), mph_ang(180), 6, 283, 29, 10],
+    [1, -115.4, 126.6, 17, 267, 7.5, 7.5],                    # the dots between (15 .. 175), as measured
+    [1, kmh_ang(10), kmh_ang(300), 30, 175, 12, 4],           # the inner km/h ring, every 10
+    [2, rpm_ang(0), rpm_ang(9), 10, 281, 31, 10],             # 0 .. 9 thousand
+    [2, rpm_ang(0.5), rpm_ang(8.5), 9, 281, 18, 5],           # the halves
     [0, -23, 23, 3, 172, 22, 6.5],                            # fuel: 1/4 1/2 3/4 (round the low pivot, near the rim)
     [3, -17, 17, 3, 192, 20, 6.5],                            # coolant
 ]
@@ -86,9 +103,9 @@ TICKS = [
 ZONES = [
     # the E46 M3's lamps round the rev counter's rim, one in each 500 rpm step from 4000: yellow to 7000 (the warm-up
     # lamps: hud.js puts them out one by one from the lowest as the oil warms, WARM), orange to 7500, red to 9000 (always lit)
-    [2, rpm_ang(4.0), rpm_ang(7.0), 256, 272, 'yellow', 6],
-    [2, rpm_ang(7.0), rpm_ang(7.5), 256, 272, 'orange', 1],
-    [2, rpm_ang(7.5), rpm_ang(9.0), 256, 272, 'red', 3],
+    [2, rpm_ang(4.0), rpm_ang(7.0), 260, 276, 'yellow', 6],
+    [2, rpm_ang(7.0), rpm_ang(7.5), 260, 276, 'orange', 1],
+    [2, rpm_ang(7.5), rpm_ang(9.0), 260, 276, 'red', 3],
     [3, -42, -31, 168, 200, 'blue'],
     [3, 30, 41, 168, 200, 'red'],
 ]
@@ -100,11 +117,11 @@ MPH_AT = {0: (501.0, 497.0), 20: (456.5, 414.0), 40: (446.5, 309.0), 60: (497.5,
           100: (708.5, 138.0), 120: (805.0, 197.0), 140: (865.5, 295.0), 160: (863.0, 396.0), 180: (813.0, 497.0)}
 RPM_AT = {0: (1117.0, 450.0), 1: (1086.5, 362.0), 2: (1117.5, 268.0), 3: (1173.5, 195.5), 4: (1262.0, 145.5),
           5: (1370.0, 146.0), 6: (1454.5, 194.0), 7: (1516.0, 274.0), 8: (1540.5, 362.0), 9: (1517.5, 454.0)}
-KM_R = 137          # the inner km/h figures' ink centres from the pivot (the render's, 130 .. 142); on the true scale
+KM_R, KM_DA = 135, 1.5   # the inner km/h figures' ink centres from the pivot, and a little clockwise of their ticks (render)
 FIGURES = ([('fs_%d' % v, str(v), 'e4_big') + MPH_AT[v] for v in range(0, 181, 20)]
            + [('ft_%d' % k, str(k), 'e4_rpm') + RPM_AT[k] for k in range(10)]
-           + [('fk_%d' % v, str(v), 'e4_km', SPD['c'][0] + KM_R * math.sin(math.radians(kmh_ang(v))),
-               SPD['c'][1] - KM_R * math.cos(math.radians(kmh_ang(v)))) for v in range(20, 301, 20)])
+           + [('fk_%d' % v, str(v), 'e4_km', SPD['pivot'][0] + KM_R * math.sin(math.radians(kmh_ang(v) + KM_DA)),
+               SPD['pivot'][1] - KM_R * math.cos(math.radians(kmh_ang(v) + KM_DA))) for v in range(20, 301, 20)])
 TEXTS = [
     ('km/h', 'e4_sm', 665.0, 450.5), ('MPH', 'e4_mph', 662.0, 555.5),
     ('1/min', 'e4_lab', 1315.0, 218.0), ('x1000', 'e4_lab', 1314.0, 250.5),
@@ -154,10 +171,11 @@ def text_at(wid, text, fname, cx, cy, color='mark', align='center'):
 def layout():
     dials, needles = [], []
     spec = [  # (dial, signal, pivot, needle length, width, hub, tail, map, rest)
-        (FUEL, 'fuel', FUEL['pivot'], 168, 10, 46, 0, [(0, -40), (1, 40)], -46),
-        (SPD, 'speed', SPD['c'], 262, 9, 45, 0, [(0, mph_ang(0)), (180, mph_ang(180)), (200, mph_ang(180) + 4)], mph_ang(0) - 3),
-        (TACH, 'rpm', TACH['c'], 262, 9, 45, 0, [(0, rpm_ang(0)), (9000, rpm_ang(9)), (9600, rpm_ang(9) + 4)], rpm_ang(0) - 3),
-        (COOL, 'coolant', COOL['pivot'], 168, 10, 46, 0,
+        (FUEL, 'fuel', FUEL['pivot'], 165, 11, 42, 0, [(0, -40), (1, 40)], -46),
+        # the big needles reach the ticks' inner ends, 13 wide at the hub; the hubs' tab (tail < 0: its size)
+        (SPD, 'speed', SPD['pivot'], 250, 13, 46, -21, MPH_TABLE + [(200, mph_ang(180) + 4)], mph_ang(0) - 3),
+        (TACH, 'rpm', TACH['pivot'], 250, 13, 46, -21, [(0, rpm_ang(0)), (9000, rpm_ang(9)), (9600, rpm_ang(9) + 4)], rpm_ang(0) - 3),
+        (COOL, 'coolant', COOL['pivot'], 165, 11, 42, 0,
          [(40, -47), (50, -36.5), (80, -12), (85, 0), (105, 0), (115, 18), (120, 35.5), (130, 45)], -47),
     ]
     for d, sig, piv, nl, nw, hub, tail, mp, rest in spec:
@@ -205,13 +223,13 @@ def layout():
             'h': ey1 - ey0, 'mph': True, 'lineColor': 'dial', 'tach': [cx, cy, r, cut],
             'econ': {'top': top, 'cham': cham, 'ticks': eticks}}
 
-    reach = [(n['pivot'], max(n['needle'][0], n['tail'], n['hub']) + n['needle'][1] + 3) for n in needles]
+    reach = [(n['pivot'], max(n['needle'][0], n['tail'], n['hub']) + n['needle'][1] + 14) for n in needles]
     nx0 = max(0, math.floor(min(p[0] - k for p, k in reach)))
     nx1 = min(W, math.ceil(max(p[0] + k for p, k in reach)))
     ny0 = max(0, math.floor(min(p[1] - k for p, k in reach)))
     ndl = {'id': 'needles', 'type': 'e36needles', 'class': 'content', 'z': 6, 'x': nx0, 'y': ny0, 'w': nx1 - nx0,
-           'h': TOP - ny0, 'mph': True, 'dials': needles,
-           'econ': {'signal': 'oil', 'pivot': [px, py], 'top': top, 'len': L(OIL_LEN), 'width': L(7), 'cham': cham,
+           'h': TOP - ny0, 'mph': True, 'dials': needles, 'look46': True,
+           'econ': {'signal': 'oil', 'pivot': [px, py], 'top': top, 'len': L(OIL_LEN), 'width': L(10), 'cham': cham,
                     'tach': [cx, cy, r, cut], 'map': emap, 'rest': emap[0][1], 'hub': L(OIL_HUB)}}
 
     # the print
