@@ -24,7 +24,12 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from gen_e36 import W, H, HOLES, font, ink, digit_ink  # noqa: E402
+from gen_e36 import W, H, font, ink, digit_ink  # noqa: E402
+
+# BMW's own items in its bottom row that must stay uncovered (x0, x1; the dash's pieces skip them), or BMW draws black
+# boxes over the theme. On the G80 M3 (car photos, Nov 22 2026) the drive mode (MDM) from 1214, then the gear number,
+# the letter and the shift programme's three lines, together about 1380 .. 1510; the electric range's slot as on the E36.
+HOLES = [(1214, 1525), (1680, 1880)]
 
 # the render -> the cluster
 S = 0.943
@@ -43,11 +48,12 @@ GAP = 3
 SPD = {'c': (657.4, 347.9), 'r': 290, 'cut': 607}
 TACH = {'c': (1313.3, 350.0), 'r': 290, 'cut': 607}
 # each dial's foot: (the flat's half width, the shoulders' slope, mode): the big dials cut flat with sloped shoulders
-# (mode 1); the small ones widen below their centre down to a flat wider than the circle (mode 2, the hull)
+# (mode 1); the small ones are plain circles cut flat just above their foot, no shoulders (their chrome ring, traced off
+# the render: a circle r 163.5 round (180.5, 476), flat at y 620)
 BIG_FOOT = (196, 0.72, 1)
-SMALL_FOOT = (95, 0, 2)
-FUEL = {'c': (189.6, 466.0), 'r': 155, 'cut': 615, 'pivot': (189.6, 560.0)}
-COOL = {'c': (1793.5, 466.0), 'r': 155, 'cut': 615, 'pivot': (1793.5, 560.0)}
+SMALL_FOOT = (0, 0, 0)
+FUEL = {'c': (189.6, 470.0), 'r': 155, 'cut': 609, 'pivot': (189.6, 560.0)}
+COOL = {'c': (1793.5, 470.0), 'r': 155, 'cut': 609, 'pivot': (1793.5, 560.0)}
 
 
 def mph_ang(v):
