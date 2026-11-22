@@ -1846,7 +1846,7 @@
             ]
           ],
           "rest": -135.4,
-          "resp": 10
+          "resp": 22
         },
         {
           "signal": "rpm",
@@ -1875,7 +1875,7 @@
             ]
           ],
           "rest": -121.2,
-          "resp": 16
+          "resp": 28
         },
         {
           "signal": "coolant",
@@ -1924,7 +1924,6 @@
         }
       ],
       "look46": true,
-      "pathAhead": 0.25,
       "econ": {
         "signal": "oil",
         "pivot": [
