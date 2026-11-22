@@ -31,7 +31,7 @@ FIT = [
     ('e4_big', SEMI, D, '100', 35, 62),                  # the MPH figures (a touch under the render's 38 x 67: on the car they read large)
     ('e4_rpm', SEMI, D, '4', 40, 26),                    # the rev counter's 0 .. 9
     ('e4_km', SEMI, D, '260', 20, 38),                   # the inner km/h ring
-    ('e4_mph', SEMI, 'MPH', 'MPH', 25, 64),              # MPH under the badge: spaced out
+    ('e4_mph', SEMI, 'MPH', 'MPH', 17, 44),              # MPH under the badge: spaced out, well under the render's 25 x 64
     ('e4_lab', SEMI, U + L + D + ' /', 'x1000', 25, 78), # 1/min, x1000: set tight
     ('e4_sm', SEMI, U + L + D + ' /°', 'km/h', 21, 52),  # km/h, miles, the LCD's units (°F / °C)
     ('e4_gl', SEMIBOLD, D + '/', '0', 28, 17),           # the fuel gauge's 0, 1/2, 1/1 (width from 1/1 below)
