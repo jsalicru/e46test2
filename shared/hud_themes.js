@@ -270,12 +270,13 @@ THEMES.e46m3 = Object.assign({}, THEMES.e36, {
     needle: [250, 92, 10, 255], mneedle: [250, 92, 10, 255], hub: [20, 20, 20, 255],
     red: [236, 18, 14, 255], blue: [36, 108, 232, 255], orange: [255, 140, 0, 255],
     well: [42, 11, 2, 255], lcd: [255, 128, 12, 255], strip: [0, 0, 0, 255],
-    night: {     // the same print a shade warmer and dimmer after sunset
-        fg: [232, 160, 112, 255], dim: [232, 160, 112, 255], arc: [232, 160, 112, 255], head: [232, 160, 112, 255],
-        bezel: [5, 5, 5, 255], face: [18, 18, 18, 255], dial: [40, 39, 38, 255], mark: [232, 160, 112, 255],
-        needle: [240, 80, 8, 255], mneedle: [240, 80, 8, 255], hub: [16, 16, 16, 255],
-        red: [200, 16, 12, 255], blue: [28, 84, 180, 255], orange: [220, 120, 0, 255],
-        well: [34, 9, 2, 255], lcd: [240, 112, 10, 255], strip: [0, 0, 0, 255],
+    night: {     // after sunset, after the night sketch (design/e46m3-night-reference.png): amber print and lamps on
+                 // near-black red-brown dials, orange needles, the rings lit orange (the shader, u_light 0)
+        fg: [250, 186, 28, 255], dim: [250, 186, 28, 255], arc: [250, 186, 28, 255], head: [250, 186, 28, 255],
+        bezel: [3, 1, 0, 255], face: [9, 3, 0, 255], dial: [34, 11, 2, 255], mark: [250, 186, 28, 255],
+        needle: [248, 105, 5, 255], mneedle: [248, 105, 5, 255], hub: [9, 5, 3, 255],
+        red: [238, 22, 6, 255], blue: [2, 114, 241, 255], orange: [243, 144, 51, 255],
+        well: [70, 12, 0, 255], lcd: [250, 176, 8, 255], strip: [0, 0, 0, 255],
     },
 });
 // every theme: the shift-point red, used by "hot" (the gear and SHIFT at the shift point, the rev bar past it)
