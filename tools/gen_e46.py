@@ -51,6 +51,9 @@ SPD = {'c': (657.4, 347.9), 'r': 290, 'cut': 607, 'pivot': (662.2, 358.2)}
 TACH = {'c': (1313.3, 350.0), 'r': 290, 'cut': 607, 'pivot': (1314.8, 360.4)}
 # the warm-up lamps: all lit below WARM[0] F oil, one by one out as it climbs, all out at WARM[1]; WARM[2] lamps
 WARM = (100, 160, 6)
+# the shift lights: from SHIFT[0] rpm the yellow lamps light from the top down (the one after 6500 first, the one after
+# 4000 last), all lit by SHIFT[1]; past SHIFT[2] every lamp blinks
+SHIFT = (6000, 6900, 6900)
 
 # each dial's foot: (the flat's half width, the shoulders' slope, mode): the big dials cut flat with sloped shoulders
 # (mode 1); the small ones are plain circles cut flat just above their foot, no shoulders (their chrome ring, traced off
@@ -87,15 +90,15 @@ def rpm_ang(k):
 
 # [dial, first angle, last angle, count, outer radius, length, width] (render px)
 TICKS = [
-    # the MPH ticks in four even runs, as the render's uneven scale (the shader spaces each group evenly; 10 groups in all)
+    # the MPH ticks in even runs as the render's uneven scale (the shader spaces each group evenly); in each run the
+    # ticks and the dots between them take turns (last field 2.55: a dot every other step, its centre 0.55 of the tick's
+    # length in from its outer end), so each dot sits halfway between its two ticks. 0 has no dot after it (the render).
     [1, mph_ang(0), mph_ang(0), 1, 283, 29, 10],
-    [1, mph_ang(10), mph_ang(70), 7, 283, 29, 10],
-    [1, mph_ang(80), mph_ang(120), 5, 283, 29, 10],
-    [1, mph_ang(130), mph_ang(180), 6, 283, 29, 10],
-    [1, -115.4, 126.6, 17, 267, 8, 8, 1],                     # the dots between (15 .. 175), as measured (round)
+    [1, mph_ang(10), mph_ang(75), 14, 283, 29, 10, 2.55],
+    [1, mph_ang(80), mph_ang(125), 10, 283, 29, 10, 2.55],
+    [1, mph_ang(130), mph_ang(180), 11, 283, 29, 10, 2.55],
     [1, kmh_ang(10), kmh_ang(300), 30, 172, 5, 5, 1],         # the inner km/h ring, a dot every 10
-    [2, rpm_ang(0), rpm_ang(9), 10, 281, 31, 10],             # 0 .. 9 thousand
-    [2, rpm_ang(0.5), rpm_ang(8.5), 9, 276, 8, 8, 1],         # the halves: dots
+    [2, rpm_ang(0), rpm_ang(9), 19, 281, 31, 10, 2.29],      # 0 .. 9 thousand, a dot at each half between
     [0, -23, 23, 2, 166, 9, 9, 1],                            # fuel: 1/4 and 3/4 dots (round the low pivot, near the rim);
                                                               # its 1/2 dash is a zone in the print's colour (ZONES)
     [3, -17, 17, 2, 187, 9, 9, 1],                            # coolant: two dots, no middle mark
@@ -153,8 +156,8 @@ FACE = {'box': (-30, -10, 2013, 800), 'radius': 60, 'arch': (991, 2240.6, 2232.6
 
 
 def tick(g):
-    """[dial, first, last, count, outer r, length, width(, 1: round dots)] -> target px"""
-    return [g[0], round(g[1], 2), round(g[2], 2), g[3], L(g[4]), L(g[5]), L(g[6])] + ([1] if len(g) > 7 and g[7] else [])
+    """[dial, first, last, count, outer r, length, width(, shape: 1 round dots, 2.f bars and dots taking turns)]"""
+    return [g[0], round(g[1], 2), round(g[2], 2), g[3], L(g[4]), L(g[5]), L(g[6])] + ([g[7]] if len(g) > 7 and g[7] else [])
 
 
 def zone(z):
@@ -199,7 +202,7 @@ def layout():
         'zones': [zone(z) for z in ZONES],
         'windows': [list(T(x, y)) + [L(w), L(h), L(r)] if w else [0, 0, 0, 0, 0] for x, y, w, h, r in WINDOWS],
         'strips': STRIPS, 'stripR': STRIP_R,
-        'chrome': CHROME, 'pill': True, 'warm': list(WARM),
+        'chrome': CHROME, 'pill': True, 'warm': list(WARM), 'shift': list(SHIFT),
     }
 
     # the oil gauge: its ticks (target px) and the needle's scale
