@@ -141,4 +141,44 @@ function tripText(km, us) {
     return (s.length < 3 ? '000'.slice(s.length) + s : s) + '.' + (tenths % 10);
 }
 
-module.exports = { frac, flowLph, economy, Smooth, Needle, PATH_BACK, pathAt, nextPath, tripText };
+/**
+ * The E46's paths (hud.js, layouts with "look46"): like nextPath, but it never stops short. Its keys: now (where the old
+ * path is), `keep` on along the old path, `keep + ahead` the follower's place by then (`to`), then on to the follower's
+ * target (`final`) over `tail` s. When the next tick comes late (the head unit busy) the needle goes on towards where
+ * it is heading instead of holding at the last key and jumping when the tick comes; an on-time tick replans it.
+ */
+function nextPathTo(prev, t, keep, ahead, to, final, tail) {
+    if (!prev) return { t: [t, keep, keep + ahead, keep + ahead + tail], a: [to, to, to, final] };
+    return { t: [t, keep, keep + ahead, keep + ahead + tail], a: [pathAt(prev, t), pathAt(prev, t + keep), to, final] };
+}
+
+/**
+ * The revs between the car's samples (E46): it sends the engine speed only on a change, a few times a second, so the
+ * needle would reach each sample and wait. On along the last two samples' slope for at most one interval, then back to
+ * the last sample over the next one (the revs held steady), so it never runs on.
+ */
+class Extrap {
+    constructor() { this.v = null; this.t = 0; this.dv = 0; this.dt = 0; }
+
+    at(v, now) {
+        if (typeof v !== 'number' || !isFinite(v)) { this.v = null; return v; }
+        if (this.v === null) { this.v = v; this.t = now; this.dv = 0; this.dt = 0; return v; }
+        if (v !== this.v) {
+            const dt = now - this.t;
+            this.dv = dt > 0 && dt < EXTRAP_MAX_MS ? v - this.v : 0;
+            this.dt = dt;
+            this.v = v; this.t = now;
+        }
+        return this.peek(now);
+    }
+
+    /** Where it reckons the revs at `t` (ms; now or later), without taking a sample. */
+    peek(t) {
+        if (this.v === null || !this.dv || !(this.dt > 0)) return this.v;
+        const r = (t - this.t) / this.dt;
+        return this.v + this.dv * (r <= 1 ? r : Math.max(0, 2 - r));
+    }
+}
+const EXTRAP_MAX_MS = 400;     // samples further apart than this are not a slope (the engine idling, a pause)
+
+module.exports = { frac, flowLph, economy, Smooth, Needle, PATH_BACK, pathAt, nextPath, nextPathTo, Extrap, tripText };
