@@ -1768,7 +1768,8 @@ uniform vec4 u_tick[10];   // tick groups: first angle, last angle, count (0 = n
 uniform vec4 u_tickB[10];  // length, width, dial index (they turn round its pivot); w: 0 bars, 1 round dots (the E46's),
                            // 2.f bars and dots taking turns (the first a bar): a dot 0.8 x width round, its centre 0.f x length in
 uniform vec4 u_zone[6];    // zones: from angle, to angle, inner radius, outer radius
-uniform vec2 u_zoneB[6];   // dial index (round its pivot); colour 0 red, 1 blue, 2 orange, 3 yellow, 4 an unlit lamp, 5 the print (-1 none)
+uniform vec2 u_zoneB[6];   // dial index (round its pivot); colour 0 red, 1 blue, 2 orange, 3 the warm-up lamps (orange too; the
+                           // shader puts them out by u_e46.z), 4 an unlit lamp, 5 the print (-1 none)
                            // + 8 x stripes
 uniform vec4 u_win[3];     // windows (LCD, top lamp, ASC or the M3's /M plate): x, y, w, h (w 0 = none)
 uniform vec3 u_winR;       // their corner radii
@@ -1887,7 +1888,7 @@ void main() {
             float dd = zd;
             float n = floor(b.y / 8.0), k = b.y - n * 8.0;
             vec3 zc = k < 0.5 ? u_col[6] : k < 1.5 ? u_col[7] : k < 2.5 ? u_col[8]
-                : k < 3.5 ? vec3(u_col[8].r, min(1.0, u_col[8].g * 1.37), u_col[8].b) : k < 4.5 ? mix(u_col[2], MARK, 0.22) : MARK;
+                : k < 3.5 ? u_col[8] : k < 4.5 ? mix(u_col[2], MARK, 0.22) : MARK;
             if (n > 0.0 && u_e46.y > 0.5) {
                 // a lamp in the middle of each of the n steps: a capsule along the arc, 40 % of a step long; a yellow
                 // (warm-up) lamp below the count that is out is drawn unlit
